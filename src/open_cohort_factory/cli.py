@@ -44,7 +44,12 @@ def build(
         samples, disease_provenance = GDCClient().fetch(project.disease_cohort)
     provenance = [disease_provenance]
     for panel in project.reference_panels:
-        if panel.source.value == "gtex":
+        if panel.source.value == "gdc":
+            with console.status(f"Retrieving public GDC metadata for {panel.name}..."):
+                reference_samples, reference_provenance = GDCClient().fetch_reference(
+                    panel, project.disease_cohort
+                )
+        elif panel.source.value == "gtex":
             with console.status(f"Retrieving public GTEx metadata for {panel.name}..."):
                 reference_samples, reference_provenance = GTExClient().fetch(panel)
         elif panel.source.value == "tabula_sapiens":

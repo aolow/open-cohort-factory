@@ -42,6 +42,13 @@ def exact_match(samples: list[SampleRecord], spec: MatchingSpec) -> list[dict[st
     results: list[dict[str, Any]] = []
     for reference_name in reference_names:
         reference = [sample for sample in donors if sample.cohort_name == reference_name]
+        if reference and all(
+            sample.reference_context is not None
+            and sample.reference_context.value == "adjacent_non_tumor"
+            for sample in reference
+        ):
+            results.append(_within_donor_match(disease, reference, reference_name))
+            continue
         disease_groups = _group_by_stratum(disease, spec.variables)
         reference_groups = _group_by_stratum(reference, spec.variables)
         selected: list[dict[str, Any]] = []
@@ -100,6 +107,51 @@ def exact_match(samples: list[SampleRecord], spec: MatchingSpec) -> list[dict[st
             }
         )
     return results
+
+
+def _within_donor_match(
+    disease: list[SampleRecord], reference: list[SampleRecord], reference_name: str
+) -> dict[str, Any]:
+    """Pair adjacent tissue to tumor from the same participant."""
+    disease_by_id = {sample.case_id: sample for sample in disease}
+    reference_by_id = {sample.case_id: sample for sample in reference}
+    paired_ids = sorted(disease_by_id.keys() & reference_by_id.keys())
+    selected: list[dict[str, Any]] = []
+    for index, donor_id in enumerate(paired_ids, start=1):
+        pair_id = f"{reference_name}-pair-{index:04d}"
+        for sample in (disease_by_id[donor_id], reference_by_id[donor_id]):
+            selected.append(
+                {
+                    "pair_id": pair_id,
+                    "source": sample.source.value,
+                    "cohort_role": sample.cohort_role,
+                    "cohort_name": sample.cohort_name,
+                    "donor_id": donor_id,
+                    "stratum": {"case_id": donor_id},
+                }
+            )
+    excluded = [
+        {
+            "source": sample.source.value,
+            "cohort_role": sample.cohort_role,
+            "cohort_name": sample.cohort_name,
+            "donor_id": sample.case_id,
+            "reason": "no_within_donor_counterpart",
+        }
+        for sample in disease + reference
+        if sample.case_id not in paired_ids
+    ]
+    return {
+        "reference_panel": reference_name,
+        "method": "within_donor",
+        "variables": ["case_id"],
+        "ratio": 1,
+        "seed": None,
+        "matched_pairs": len(paired_ids),
+        "selected_donors": selected,
+        "excluded_donors": excluded,
+        "matched_strata": [],
+    }
 
 
 def _group_by_stratum(

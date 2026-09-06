@@ -78,7 +78,11 @@ def methodological_warnings(spec: ProjectSpec, samples: list[SampleRecord]) -> l
         "interpreted as unconfounded differential expression.",
         "Missing clinical metadata means unknown, not absence of a condition or exposure.",
     ]
-    if any(sample.reference_context for sample in samples):
+    if any(
+        sample.reference_context is not None
+        and sample.reference_context.value == "adjacent_non_tumor"
+        for sample in samples
+    ):
         warnings.append(
             "Adjacent non-tumor samples come from people with cancer and are not equivalent to "
             "healthy tissue."

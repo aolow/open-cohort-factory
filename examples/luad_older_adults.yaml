@@ -12,6 +12,17 @@ disease_cohort:
     - Primary Tumor
 
 reference_panels:
+  - name: TCGA-LUAD adjacent non-tumor lung
+    source: gdc
+    tissue: Bronchus and lung
+    context: adjacent_non_tumor
+    age:
+      minimum: 60
+    resolution: bulk
+    sample_types:
+      - Solid Tissue Normal
+    notes: Tissue from participants with lung cancer; not a healthy population.
+
   - name: GTEx lung older-adult reference
     source: gtex
     tissue: Lung

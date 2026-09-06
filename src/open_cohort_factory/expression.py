@@ -11,9 +11,45 @@ def summarize_expression(
     rows: list[dict[str, Any]], matching: list[dict[str, Any]]
 ) -> dict[str, Any]:
     """Summarize all eligible samples and each donor-matched comparison."""
-    analyses = [_comparison("all_eligible", rows)]
+    disease_rows = [row for row in rows if row["cohort_role"] == "disease"]
+    reference_names = sorted(
+        {row["cohort_name"] for row in rows if row["cohort_role"] == "reference"}
+    )
+    analyses = [
+        _comparison(
+            f"all eligible: {reference_name}",
+            disease_rows
+            + [row for row in rows if row["cohort_name"] == reference_name],
+        )
+        for reference_name in reference_names
+    ]
+    for reference_name in reference_names:
+        reference_rows = [row for row in rows if row["cohort_name"] == reference_name]
+        if not any(
+            row.get("reference_context") == "adjacent_non_tumor" for row in reference_rows
+        ):
+            continue
+        disease_donors = {row["donor_id"] for row in disease_rows}
+        reference_donors = {row["donor_id"] for row in reference_rows}
+        paired_donors = disease_donors & reference_donors
+        paired_rows = [
+            row
+            for row in disease_rows + reference_rows
+            if row["donor_id"] in paired_donors
+        ]
+        comparison = _comparison(f"within donor: {reference_name}", paired_rows)
+        comparison["within_donor_pairs"] = len(paired_donors)
+        if comparison["genes"]:
+            analyses.append(comparison)
     available = {(row["cohort_role"], row["donor_id"]) for row in rows}
     for result in matching:
+        reference_rows = [
+            row for row in rows if row["cohort_name"] == result["reference_panel"]
+        ]
+        if any(
+            row.get("reference_context") == "adjacent_non_tumor" for row in reference_rows
+        ):
+            continue
         pair_members: defaultdict[str, set[tuple[str, str]]] = defaultdict(set)
         for row in result.get("selected_donors", []):
             pair_members[row["pair_id"]].add((row["cohort_role"], row["donor_id"]))
@@ -23,9 +59,9 @@ def summarize_expression(
             if len(members) == 2 and members <= available
         }
         selected = set().union(*(pair_members[pair_id] for pair_id in complete_pairs))
-        matched_rows = [
-            row for row in rows if (row["cohort_role"], row["donor_id"]) in selected
-        ]
+        matched_rows = [row for row in disease_rows + reference_rows if (
+            row["cohort_role"], row["donor_id"]
+        ) in selected]
         comparison = _comparison(f"matched: {result['reference_panel']}", matched_rows)
         comparison["complete_expression_pairs"] = len(complete_pairs)
         if comparison["genes"]:

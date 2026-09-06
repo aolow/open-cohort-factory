@@ -23,6 +23,12 @@ disease_cohort:
     - Primary Tumor
 
 reference_panels:
+  - name: TCGA-LUAD adjacent non-tumor lung
+    source: gdc
+    tissue: Bronchus and lung
+    context: adjacent_non_tumor
+    sample_types: [Solid Tissue Normal]
+
   - name: GTEx lung older-adult reference
     source: gtex
     tissue: Lung
@@ -93,9 +99,9 @@ The report answers six initial questions:
 5. Which disease-cohort age strata are missing from the reference panel?
 6. How different are the donor-level sex distributions and recorded specimen findings?
 
-Both GTEx and Tabula Sapiens panels appear as `materialized`. Xena expression is attached only to
-the eligible TCGA and GTEx sample identifiers; Tabula Sapiens remains cellular context and is not
-treated as though it shares the bulk-expression matrix.
+All three reference panels appear as `materialized`. Xena expression is attached only to eligible
+TCGA and GTEx identifiers; Tabula Sapiens remains cellular context and is not treated as though it
+shares the bulk-expression matrix.
 
 ## Follow the analysis decision
 
@@ -164,19 +170,20 @@ not remove postmortem, procurement, residual study, or unmeasured clinical diffe
 
 ## Compare eligible and expression-complete populations
 
-In the verified Xena-backed run, 584 unique cohort sample identifiers were requested and 432 were
-present in the Toil matrix: 357 TCGA-LUAD samples and 75 GTEx lung samples. This incomplete overlap
-is retained in provenance rather than silently ignored; the current GTEx Portal release and the
-older Toil compendium do not contain identical sample sets.
+In the verified Xena-backed run, 738 unique cohort sample identifiers were requested and 474 were
+present in the Toil matrix: 357 TCGA-LUAD tumors, 42 TCGA adjacent samples, and 75 GTEx lung
+samples. This incomplete overlap is retained in provenance rather than silently ignored; the current
+source releases and the older Toil compendium do not contain identical sample sets.
 
-Of the 171 demographic donor pairs, 60 had Xena measurements for both members. Matched expression
-summaries therefore use those 60 complete pairs, with donor medians as the analytical unit:
+Of the 171 GTEx demographic donor pairs, 60 had Xena measurements for both members. Matched
+expression summaries therefore use those 60 complete pairs, with donor medians as the analytical
+unit. Separately, 42 TCGA participants had both primary-tumor and adjacent-tissue expression:
 
-| Gene | All-eligible median difference | 60-pair median difference |
-| --- | ---: | ---: |
-| CEACAM5 | 4.8284 | 4.6023 |
-| EPCAM | 3.3376 | 3.0989 |
-| MSLN | 0.9434 | 1.1113 |
+| Gene | All GTEx | Matched GTEx | All adjacent | Within-participant adjacent |
+| --- | ---: | ---: | ---: | ---: |
+| CEACAM5 | 4.8284 | 4.6023 | 3.4664 | 2.1239 |
+| EPCAM | 3.3376 | 3.0989 | 1.4166 | 1.2072 |
+| MSLN | 0.9434 | 1.1113 | -0.3796 | -0.6131 |
 
 Values are differences of medians on the `log2(TPM + 1)` scale. They are descriptive effect
 summaries, not claims that postmortem GTEx lung represents a universally healthy counterfactual.
@@ -222,8 +229,7 @@ The workflow prevents several quiet analytical errors:
 - Presenting independently processed disease and reference matrices as an unconfounded contrast.
 - Losing the exact query and retrieval time used to construct a cohort.
 
-## Next extension
-
-The next analytical extension should quantify sensitivity to reference definition—for example,
-all available GTEx, age/sex-matched GTEx, and adjacent non-tumor TCGA lung—while keeping acquisition
-context and expression-complete-pair attrition visible.
+The sensitivity result is the point of the workflow: the apparent tumor-reference difference changes
+with reference definition. The report does not select whichever comparator produces the most
+favorable effect; it presents the acquisition context, overlap, and attrition needed to interpret
+each estimate.

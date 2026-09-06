@@ -13,6 +13,7 @@ from ..models import (
     DiseaseCohortSpec,
     ProvenanceRecord,
     ReferenceContext,
+    ReferencePanelSpec,
     SampleRecord,
 )
 
@@ -104,6 +105,33 @@ class GDCClient:
             citation_url="https://gdc.cancer.gov/developers/gdc-application-programming-interface-api",
         )
         return samples, provenance
+
+    def fetch_reference(
+        self, panel: ReferencePanelSpec, disease_spec: DiseaseCohortSpec
+    ) -> tuple[list[SampleRecord], ProvenanceRecord]:
+        """Retrieve GDC reference samples while preserving their cancer-cohort context."""
+        if not panel.sample_types:
+            raise ValueError("A GDC reference panel must declare sample_types.")
+        query_spec = DiseaseCohortSpec(
+            projects=panel.projects or disease_spec.projects,
+            primary_sites=[panel.tissue],
+            age=panel.age,
+            sample_types=panel.sample_types,
+        )
+        records, provenance = self.fetch(query_spec)
+        normalized = [
+            record.model_copy(
+                update={
+                    "cohort_role": "reference",
+                    "cohort_name": panel.name,
+                    "reference_context": panel.context,
+                }
+            )
+            for record in records
+        ]
+        provenance.query["cohort_role"] = "reference"
+        provenance.query["reference_panel"] = panel.name
+        return normalized, provenance
 
     @staticmethod
     def _normalize_case(hit: dict[str, Any], spec: DiseaseCohortSpec) -> list[SampleRecord]:

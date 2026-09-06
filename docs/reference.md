@@ -28,14 +28,17 @@ project identifiers, primary site, age range, sex at birth, and sample type.
 source, tissue, acquisition context, resolution, and optional age limits and notes. GTEx panels with
 bulk resolution are currently materialized through the GTEx Portal V2 API using RNA-seq samples.
 Tabula Sapiens panels with cell-type resolution are queried through the pinned CELLxGENE Census LTS
-release and emitted as donor × cell-type aggregate records.
+release and emitted as donor × cell-type aggregate records. GDC panels may declare `projects` and
+must declare `sample_types`; this supports adjacent non-tumor tissue without relabeling it healthy.
 
 `comparability` records intended stratification, minimum donor counts, handling of missing metadata,
 and whether source effects must remain visible.
 
 `matching` controls optional deterministic donor matching. The current implementation supports
 1:1 exact matching on `age_bracket`, `sex_at_birth`, or both. `seed` controls reproducible selection
-when a stratum contains more eligible donors than needed.
+when a stratum contains more eligible donors than needed. Adjacent non-tumor panels are linked to
+tumor samples from the same GDC participant instead of being randomly paired within demographic
+strata.
 
 ```yaml
 matching:

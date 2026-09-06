@@ -59,6 +59,8 @@ class ReferencePanelSpec(BaseModel):
     age: AgeRange = Field(default_factory=AgeRange)
     resolution: Literal["bulk", "cell_type", "single_cell"] = "bulk"
     notes: str | None = None
+    projects: list[str] = Field(default_factory=list)
+    sample_types: list[str] = Field(default_factory=list)
 
 
 StratificationField: TypeAlias = Literal["age_group", "sex_at_birth", "source"]

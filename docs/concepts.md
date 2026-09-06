@@ -48,3 +48,8 @@ Matching improves balance only for included variables. It does not resolve tissu
 postmortem effects, assay processing, ancestry, smoking, treatment, comorbidity, or unmeasured
 differences. Unavailable metadata cannot be balanced. Consequently, a matched donor export is an
 auditable analysis population—not permission to perform naïve cross-study differential expression.
+
+When tumor and adjacent non-tumor tissue come from the same participant, the participant identifier
+takes precedence over demographic matching. This controls participant-level differences but does
+not make adjacent tissue healthy: field effects, occult alteration, and cancer-associated systemic
+effects remain plausible.

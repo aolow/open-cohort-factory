@@ -94,6 +94,9 @@ class XenaClient:
                         "cohort_name": sample.cohort_name,
                         "source": sample.source.value,
                         "project_id": sample.project_id,
+                        "reference_context": (
+                            sample.reference_context.value if sample.reference_context else None
+                        ),
                         "gene": gene,
                         "log2_tpm": _to_log2_tpm_plus_1(value),
                     }

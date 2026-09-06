@@ -66,7 +66,8 @@ TEMPLATE = """<!doctype html>
   {% for match in summary.matching %}
   <div class="card">
     <h3>{{ match.reference_panel }}</h3>
-    <p><strong>{{ match.matched_pairs }}</strong> donor pairs matched exactly on {{ match.variables|join(", ") }} using seed {{ match.seed }}.</p>
+    {% if match.method == "within_donor" %}<p><strong>{{ match.matched_pairs }}</strong> tumor/reference pairs linked within the same participant.</p>
+    {% else %}<p><strong>{{ match.matched_pairs }}</strong> donor pairs matched exactly on {{ match.variables|join(", ") }} using seed {{ match.seed }}.</p>{% endif %}
     <table><thead><tr>{% for variable in match.variables %}<th>{{ variable }}</th>{% endfor %}<th>Matched pairs</th></tr></thead>
     <tbody>{% for row in match.matched_strata %}<tr>{% for variable in match.variables %}<td>{{ row.stratum[variable] }}</td>{% endfor %}<td>{{ row.matched_pairs }}</td></tr>{% endfor %}</tbody></table>
     <p>{{ match.excluded_donors|length }} donor records were not selected. Reasons are retained in <code>matching.json</code>.</p>
@@ -78,6 +79,7 @@ TEMPLATE = """<!doctype html>
   {% for analysis in summary.expression.comparisons %}
   <div class="card"><h3>{{ analysis.name }}</h3>
     {% if analysis.complete_expression_pairs is defined %}<p><strong>{{ analysis.complete_expression_pairs }}</strong> matched pairs had expression available for both donors.</p>{% endif %}
+    {% if analysis.within_donor_pairs is defined %}<p><strong>{{ analysis.within_donor_pairs }}</strong> participants contributed both tumor and adjacent non-tumor expression.</p>{% endif %}
     <table><thead><tr><th>Gene</th><th>Disease samples</th><th>Reference samples</th><th>Disease median</th><th>Reference median</th><th>Median difference</th></tr></thead>
     <tbody>{% for row in analysis.genes %}<tr><td>{{ row.gene }}</td><td>{{ row.disease_samples }}</td><td>{{ row.reference_samples }}</td><td>{{ row.disease_median }}</td><td>{{ row.reference_median }}</td><td>{{ row.median_difference }}</td></tr>{% else %}<tr><td colspan="6">No comparable Xena measurements were available.</td></tr>{% endfor %}</tbody></table>
   </div>
