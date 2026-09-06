@@ -19,6 +19,7 @@ from ..models import (
 GDC_CASES_ENDPOINT = "https://api.gdc.cancer.gov/cases"
 GDC_FIELDS = [
     "case_id",
+    "submitter_id",
     "project.project_id",
     "primary_site",
     "demographic.age_at_index",
@@ -30,6 +31,7 @@ GDC_FIELDS = [
     "diagnoses.age_at_diagnosis",
     "diagnoses.tissue_or_organ_of_origin",
     "samples.sample_id",
+    "samples.submitter_id",
     "samples.sample_type",
 ]
 
@@ -120,6 +122,8 @@ class GDCClient:
                 project_id=project_id,
                 case_id=hit["case_id"],
                 sample_id=sample["sample_id"],
+                case_submitter_id=hit.get("submitter_id"),
+                sample_submitter_id=sample.get("submitter_id"),
                 sample_type=sample_type,
                 primary_site=hit.get("primary_site"),
                 tissue_or_organ_of_origin=_first(diagnoses, "tissue_or_organ_of_origin"),

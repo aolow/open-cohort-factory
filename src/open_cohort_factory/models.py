@@ -28,6 +28,7 @@ class DataSource(StrEnum):
     GTEX = "gtex"
     TABULA_SAPIENS = "tabula_sapiens"
     CELLXGENE = "cellxgene"
+    XENA_TOIL = "xena_toil"
 
 
 class AgeRange(BaseModel):
@@ -89,6 +90,15 @@ class MatchingSpec(BaseModel):
     seed: int = 2026
 
 
+class ExpressionSpec(BaseModel):
+    """Optional analysis-ready expression retrieval after cohort construction."""
+
+    source: Literal[DataSource.XENA_TOIL] = DataSource.XENA_TOIL
+    genes: list[str] = Field(min_length=1)
+    dataset: str = "TcgaTargetGtex_rsem_gene_tpm"
+    transform: Literal["log2_tpm_plus_1"] = "log2_tpm_plus_1"
+
+
 class ProjectSpec(BaseModel):
     name: str
     description: str
@@ -96,6 +106,7 @@ class ProjectSpec(BaseModel):
     reference_panels: list[ReferencePanelSpec] = Field(default_factory=list)
     comparability: ComparabilitySpec = Field(default_factory=ComparabilitySpec)
     matching: MatchingSpec = Field(default_factory=MatchingSpec)
+    expression: ExpressionSpec | None = None
 
 
 class SampleRecord(BaseModel):
@@ -105,6 +116,8 @@ class SampleRecord(BaseModel):
     project_id: str
     case_id: str
     sample_id: str
+    case_submitter_id: str | None = None
+    sample_submitter_id: str | None = None
     sample_type: str | None = None
     primary_site: str | None = None
     tissue_or_organ_of_origin: str | None = None

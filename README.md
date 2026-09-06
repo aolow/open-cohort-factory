@@ -5,9 +5,9 @@ populations from public biomedical data. It treats “normal” as a claim that 
 not as a universal sample label.
 
 The current release retrieves public case and sample metadata from the NCI Genomic Data Commons and
-GTEx, plus donor-aware cell metadata from Tabula Sapiens through the CELLxGENE Census. It normalizes
-all three into a source-independent model, preserves tissue-acquisition context, and produces an
-auditable HTML report.
+GTEx, donor-aware cell metadata from Tabula Sapiens through the CELLxGENE Census, and optional
+cohort-restricted expression slices from the UCSC Xena Toil recompute. It preserves
+tissue-acquisition context and produces an auditable HTML report.
 
 ## Why this exists
 
@@ -40,6 +40,7 @@ the local documentation site with `uv run mkdocs serve`.
 - `report.html`: a self-contained human-readable report with interpretation guardrails
 - `matching.json`: selected and excluded donors with strata and explicit reasons
 - `matched_donors.tsv`: analysis-ready table of deterministic donor pairs
+- `expression.tsv`: requested Xena measurements only; never the full expression atlas
 
 ## Reference contexts
 
@@ -71,8 +72,8 @@ comorbidity, or exposure.
 2. GTEx bulk-tissue reference connector and donor-level age/sex comparability audit
 3. Tabula Sapiens donor-aware cell-type reference connector
 4. Matching and auditable sensitivity analyses across reference panels
-5. Donor-aware expression summaries without downloading whole-atlas matrices
-5. Assay-aware expression summaries and an interactive cohort explorer
+5. Cohort-restricted Xena Toil expression summaries without downloading whole-atlas matrices
+6. Sensitivity analysis across reference definitions and an interactive cohort explorer
 
 ## Data use
 

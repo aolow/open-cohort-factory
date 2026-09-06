@@ -9,12 +9,14 @@ from rich.table import Table
 
 from .audit import methodological_warnings, summarize
 from .config import load_spec
+from .expression import summarize_expression
 from .matching import exact_match
 from .models import BuildResult
 from .report import write_outputs
 from .sources.gdc import GDCClient
 from .sources.gtex import GTExClient
 from .sources.tabula_sapiens import TabulaSapiensClient
+from .sources.xena import XenaClient
 
 app = typer.Typer(no_args_is_help=True, help="Build reproducible public-data cohorts.")
 console = Console()
@@ -52,13 +54,25 @@ def build(
             continue
         samples.extend(reference_samples)
         provenance.append(reference_provenance)
+    matching = exact_match(samples, project.matching)
+    expression_rows: list[dict[str, object]] = []
+    expression_summary: dict[str, object] | None = None
+    if project.expression is not None:
+        with console.status("Retrieving a cohort-restricted UCSC Xena expression slice..."):
+            expression_rows, expression_provenance = XenaClient().fetch(
+                samples, project.expression
+            )
+        provenance.append(expression_provenance)
+        expression_summary = summarize_expression(expression_rows, matching)
     warnings = methodological_warnings(project, samples)
     result = BuildResult(
         specification=project, samples=samples, provenance=provenance, warnings=warnings
     )
     summary = summarize(samples, project)
-    summary["matching"] = exact_match(samples, project.matching)
-    write_outputs(result, summary, output)
+    summary["matching"] = matching
+    if expression_summary is not None:
+        summary["expression"] = expression_summary
+    write_outputs(result, summary, output, expression_rows)
     console.print(
         f"[green]Built[/green] {summary['sample_count']} normalized records from "
         f"{summary['donor_count']} donors in {output}"

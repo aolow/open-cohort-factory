@@ -30,12 +30,13 @@ Multiple samples may come from one donor, and single-cell datasets contain many 
 The manifest retains those relationships. Descriptive reports show both sample and donor counts;
 future single-cell analyses will use donors, not cells, as the independent inferential units.
 
-## Cross-study comparisons
+## Uniform processing is not population comparability
 
 Source, assay, tissue processing, ischemic time, and population composition can all be confounded
-with disease status. The project will not present a naïve TCGA-versus-GTEx comparison as biological
-differential expression. Reference sources remain separately visible unless a documented,
-assay-aware method justifies integration.
+with disease status. The UCSC Xena Toil matrix reduces processing differences by applying a common
+RNA-seq pipeline to TCGA, TARGET, and GTEx. That makes descriptive expression contrasts useful, but
+does not make the contributing populations exchangeable. Open Cohort Factory therefore selects and
+audits the populations before requesting their expression values and keeps reference sources visible.
 
 ## Matching is a design aid, not harmonization
 

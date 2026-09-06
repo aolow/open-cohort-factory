@@ -48,3 +48,12 @@ matching:
     - sex_at_birth
   ratio: 1
   seed: 2026
+
+expression:
+  source: xena_toil
+  genes:
+    - EPCAM
+    - CEACAM5
+    - MSLN
+  dataset: TcgaTargetGtex_rsem_gene_tpm
+  transform: log2_tpm_plus_1

@@ -72,6 +72,17 @@ TEMPLATE = """<!doctype html>
     <p>{{ match.excluded_donors|length }} donor records were not selected. Reasons are retained in <code>matching.json</code>.</p>
   </div>
   {% else %}<p>Matching is disabled or no reference panel has been materialized.</p>{% endfor %}
+  <h2>Expression comparison</h2>
+  {% if summary.expression is defined %}
+  <p>Values are cohort-restricted UCSC Xena Toil measurements on the {{ summary.expression.scale }} scale. Differences are descriptive and do not imply causal or universally healthy reference populations.</p>
+  {% for analysis in summary.expression.comparisons %}
+  <div class="card"><h3>{{ analysis.name }}</h3>
+    {% if analysis.complete_expression_pairs is defined %}<p><strong>{{ analysis.complete_expression_pairs }}</strong> matched pairs had expression available for both donors.</p>{% endif %}
+    <table><thead><tr><th>Gene</th><th>Disease samples</th><th>Reference samples</th><th>Disease median</th><th>Reference median</th><th>Median difference</th></tr></thead>
+    <tbody>{% for row in analysis.genes %}<tr><td>{{ row.gene }}</td><td>{{ row.disease_samples }}</td><td>{{ row.reference_samples }}</td><td>{{ row.disease_median }}</td><td>{{ row.reference_median }}</td><td>{{ row.median_difference }}</td></tr>{% else %}<tr><td colspan="6">No comparable Xena measurements were available.</td></tr>{% endfor %}</tbody></table>
+  </div>
+  {% endfor %}
+  {% else %}<p>No expression retrieval was requested.</p>{% endif %}
   <h2>Single-cell reference context</h2>
   {% for panel in summary.cell_type_summaries %}
   <div class="card">
@@ -91,12 +102,23 @@ TEMPLATE = """<!doctype html>
 </main></body></html>"""
 
 
-def write_outputs(result: BuildResult, summary: dict[str, Any], output_dir: Path) -> None:
+def write_outputs(
+    result: BuildResult,
+    summary: dict[str, Any],
+    output_dir: Path,
+    expression_rows: list[dict[str, Any]] | None = None,
+) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "manifest.json").write_text(
         json.dumps(result.model_dump(mode="json"), indent=2), encoding="utf-8"
     )
     (output_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    expression_rows = expression_rows or []
+    if expression_rows:
+        with (output_dir / "expression.tsv").open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(expression_rows[0]), delimiter="\t")
+            writer.writeheader()
+            writer.writerows(expression_rows)
     matching = summary.get("matching", [])
     (output_dir / "matching.json").write_text(json.dumps(matching, indent=2), encoding="utf-8")
     with (output_dir / "matched_donors.tsv").open("w", encoding="utf-8", newline="") as handle:

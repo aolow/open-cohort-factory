@@ -50,3 +50,21 @@ matching:
 
 Selected pairs are written to `matched_donors.tsv`. `matching.json` also retains excluded donors and
 distinguishes missing matching fields, absent opposite-population strata, and surplus donors.
+
+`expression` optionally requests a small gene slice from the uniformly processed UCSC Xena Toil
+matrix after cohort construction and matching. TCGA, TARGET, and GTEx labels are never collapsed;
+only GDC/TCGA and GTEx samples explicitly present in the constructed cohort are queried.
+
+```yaml
+expression:
+  source: xena_toil
+  genes: [EPCAM, CEACAM5, MSLN]
+  dataset: TcgaTargetGtex_rsem_gene_tpm
+  transform: log2_tpm_plus_1
+```
+
+Xena values arrive as `log2(TPM + 0.001)` and are re-expressed as `log2(TPM + 1)`. The manifest
+records the dataset, genes, requested and returned sample counts, source-specific coverage, input
+scale, output transform, retrieval time, reference build, and annotation version. Matched summaries
+retain only pairs for which both donors have Xena measurements and use donor medians when a donor
+has multiple samples.

@@ -1,12 +1,12 @@
 # Older adults with lung adenocarcinoma
 
 This vignette builds a public TCGA lung adenocarcinoma cohort restricted to adults aged 60 or older,
-materializes bulk postmortem lung metadata from GTEx, and declares a future cell-type-level
-organ-donor lung reference from Tabula Sapiens.
+materializes bulk postmortem lung metadata from GTEx, adds cell-type-level organ-donor context from
+Tabula Sapiens, and retrieves a small expression slice from the UCSC Xena Toil recompute.
 
-The purpose is not yet to compare expression values. It is to determine whether the disease and
-reference populations support that analysis and which adjustments or sensitivity analyses would
-be required first.
+The purpose is to show that technical harmonization and population comparability are separate
+requirements: Xena supplies consistently processed values, while cohort construction determines
+which donors belong in each descriptive comparison.
 
 ## Inspect the specification
 
@@ -39,6 +39,12 @@ reference_panels:
     age:
       minimum: 60
     resolution: cell_type
+
+expression:
+  source: xena_toil
+  genes: [EPCAM, CEACAM5, MSLN]
+  dataset: TcgaTargetGtex_rsem_gene_tpm
+  transform: log2_tpm_plus_1
 ```
 
 The age constraints are source-specific. They do not imply that the GDC disease cohort and either
@@ -66,6 +72,7 @@ The command queries public GDC metadata and writes:
 ```text
 outputs/luad/
 ├── manifest.json
+├── expression.tsv
 ├── matched_donors.tsv
 ├── matching.json
 ├── report.html
@@ -86,8 +93,9 @@ The report answers six initial questions:
 5. Which disease-cohort age strata are missing from the reference panel?
 6. How different are the donor-level sex distributions and recorded specimen findings?
 
-Both GTEx and Tabula Sapiens panels appear as `materialized`. This status means their relevant
-metadata were retrieved and normalized; it does not imply that expression matrices were harmonized.
+Both GTEx and Tabula Sapiens panels appear as `materialized`. Xena expression is attached only to
+the eligible TCGA and GTEx sample identifiers; Tabula Sapiens remains cellular context and is not
+treated as though it shares the bulk-expression matrix.
 
 ## Follow the analysis decision
 
@@ -151,9 +159,27 @@ The 342 selected donor rows are written to `matched_donors.tsv`. The complete au
 `matching.json` retains 242 donors that were not selected and records whether each was excluded due
 to a missing opposite-population stratum, surplus within a stratum, or missing matching metadata.
 
-This matched population is suitable for controlled source-specific descriptive work. It is not yet
-suitable for naïve TCGA-versus-GTEx differential expression: exact demographic balance does not
-remove postmortem, procurement, assay, processing, or unmeasured clinical differences.
+This matched population is suitable for controlled descriptive work. Exact demographic balance does
+not remove postmortem, procurement, residual study, or unmeasured clinical differences.
+
+## Compare eligible and expression-complete populations
+
+In the verified Xena-backed run, 584 unique cohort sample identifiers were requested and 432 were
+present in the Toil matrix: 357 TCGA-LUAD samples and 75 GTEx lung samples. This incomplete overlap
+is retained in provenance rather than silently ignored; the current GTEx Portal release and the
+older Toil compendium do not contain identical sample sets.
+
+Of the 171 demographic donor pairs, 60 had Xena measurements for both members. Matched expression
+summaries therefore use those 60 complete pairs, with donor medians as the analytical unit:
+
+| Gene | All-eligible median difference | 60-pair median difference |
+| --- | ---: | ---: |
+| CEACAM5 | 4.8284 | 4.6023 |
+| EPCAM | 3.3376 | 3.0989 |
+| MSLN | 0.9434 | 1.1113 |
+
+Values are differences of medians on the `log2(TPM + 1)` scale. They are descriptive effect
+summaries, not claims that postmortem GTEx lung represents a universally healthy counterfactual.
 
 ## Add cellular context without inflating the evidence
 
@@ -198,6 +224,6 @@ The workflow prevents several quiet analytical errors:
 
 ## Next extension
 
-The next analytical extension should retrieve a small, user-selected gene panel from each source and
-produce source-specific expression summaries. It should preserve donor-level uncertainty and avoid
-pretending that TCGA, GTEx, and single-cell measurements share an interchangeable scale.
+The next analytical extension should quantify sensitivity to reference definition—for example,
+all available GTEx, age/sex-matched GTEx, and adjacent non-tumor TCGA lung—while keeping acquisition
+context and expression-complete-pair attrition visible.
