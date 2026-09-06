@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 from typing import Any
@@ -38,7 +39,7 @@ TEMPLATE = """<!doctype html>
   <div class="grid">
     <div class="card"><div class="metric">{{ summary.sample_count }}</div><div class="label">samples</div></div>
     <div class="card"><div class="metric">{{ summary.donor_count }}</div><div class="label">donors</div></div>
-    <div class="card"><div class="metric">{{ summary.age.mean if summary.age.mean is not none else "—" }}</div><div class="label">mean age with metadata</div></div>
+    <div class="card"><div class="metric">{{ summary.age.mean if summary.age.mean is not none else "—" }}</div><div class="label">disease-cohort mean age</div></div>
     <div class="card"><div class="metric">{{ summary.reference_panels|length }}</div><div class="label">declared reference panels</div></div>
   </div>
   <h2>Reference panels</h2>
@@ -61,6 +62,16 @@ TEMPLATE = """<!doctype html>
     <ul>{% for item in comparison.top_reference_pathology_categories %}<li>{{ item.category }}: {{ item.samples }} samples</li>{% else %}<li>No affirmative pathology categories recorded.</li>{% endfor %}</ul>
   </div>
   {% else %}<p>No reference panel has been materialized.</p>{% endfor %}
+  <h2>Matched cohorts</h2>
+  {% for match in summary.matching %}
+  <div class="card">
+    <h3>{{ match.reference_panel }}</h3>
+    <p><strong>{{ match.matched_pairs }}</strong> donor pairs matched exactly on {{ match.variables|join(", ") }} using seed {{ match.seed }}.</p>
+    <table><thead><tr>{% for variable in match.variables %}<th>{{ variable }}</th>{% endfor %}<th>Matched pairs</th></tr></thead>
+    <tbody>{% for row in match.matched_strata %}<tr>{% for variable in match.variables %}<td>{{ row.stratum[variable] }}</td>{% endfor %}<td>{{ row.matched_pairs }}</td></tr>{% endfor %}</tbody></table>
+    <p>{{ match.excluded_donors|length }} donor records were not selected. Reasons are retained in <code>matching.json</code>.</p>
+  </div>
+  {% else %}<p>Matching is disabled or no reference panel has been materialized.</p>{% endfor %}
   <h2>Interpretation guardrails</h2>
   {% for warning in result.warnings %}<div class="warning">{{ warning }}</div>{% endfor %}
   <h2>Metadata completeness</h2>
@@ -77,6 +88,29 @@ def write_outputs(result: BuildResult, summary: dict[str, Any], output_dir: Path
         json.dumps(result.model_dump(mode="json"), indent=2), encoding="utf-8"
     )
     (output_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    matching = summary.get("matching", [])
+    (output_dir / "matching.json").write_text(json.dumps(matching, indent=2), encoding="utf-8")
+    with (output_dir / "matched_donors.tsv").open("w", encoding="utf-8", newline="") as handle:
+        fieldnames = [
+            "reference_panel",
+            "pair_id",
+            "source",
+            "cohort_role",
+            "cohort_name",
+            "donor_id",
+            "stratum",
+        ]
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter="\t")
+        writer.writeheader()
+        for match in matching:
+            for row in match["selected_donors"]:
+                writer.writerow(
+                    {
+                        "reference_panel": match["reference_panel"],
+                        **row,
+                        "stratum": json.dumps(row["stratum"], sort_keys=True),
+                    }
+                )
     html = (
         Environment(loader=BaseLoader(), autoescape=True)
         .from_string(TEMPLATE)

@@ -74,12 +74,28 @@ class ComparabilitySpec(BaseModel):
     missing_metadata: Literal["report", "exclude"] = "report"
 
 
+MatchingField: TypeAlias = Literal["age_bracket", "sex_at_birth"]
+
+
+def _default_matching_fields() -> list[MatchingField]:
+    return ["age_bracket", "sex_at_birth"]
+
+
+class MatchingSpec(BaseModel):
+    enabled: bool = False
+    method: Literal["exact"] = "exact"
+    variables: list[MatchingField] = Field(default_factory=_default_matching_fields)
+    ratio: Literal[1] = 1
+    seed: int = 2026
+
+
 class ProjectSpec(BaseModel):
     name: str
     description: str
     disease_cohort: DiseaseCohortSpec
     reference_panels: list[ReferencePanelSpec] = Field(default_factory=list)
     comparability: ComparabilitySpec = Field(default_factory=ComparabilitySpec)
+    matching: MatchingSpec = Field(default_factory=MatchingSpec)
 
 
 class SampleRecord(BaseModel):

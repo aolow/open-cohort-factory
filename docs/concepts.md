@@ -37,3 +37,13 @@ with disease status. The project will not present a naïve TCGA-versus-GTEx comp
 differential expression. Reference sources remain separately visible unless a documented,
 assay-aware method justifies integration.
 
+## Matching is a design aid, not harmonization
+
+The initial matching method creates deterministic 1:1 donor pairs within exact public age-bracket
+and sex strata. Selection within an oversubscribed stratum uses a recorded seed and stable hash, so
+the result is reproducible without implying that identifier order is biologically meaningful.
+
+Matching improves balance only for included variables. It does not resolve tissue procurement,
+postmortem effects, assay processing, ancestry, smoking, treatment, comorbidity, or unmeasured
+differences. Unavailable metadata cannot be balanced. Consequently, a matched donor export is an
+auditable analysis population—not permission to perform naïve cross-study differential expression.

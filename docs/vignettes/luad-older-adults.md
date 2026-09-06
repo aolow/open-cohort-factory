@@ -66,6 +66,8 @@ The command queries public GDC metadata and writes:
 ```text
 outputs/luad/
 ├── manifest.json
+├── matched_donors.tsv
+├── matching.json
 ├── report.html
 └── summary.json
 ```
@@ -120,6 +122,38 @@ uv run python examples/inspect_comparability.py outputs/luad/summary.json
 This example consumes the machine-readable comparability result rather than reimplementing its
 logic in a notebook. It can serve as the handoff between cohort construction and a downstream
 analysis plan, workflow manager, or review document.
+
+## Build a matched analysis population
+
+The example enables deterministic 1:1 exact matching on public age bracket and sex:
+
+```yaml
+matching:
+  enabled: true
+  method: exact
+  variables:
+    - age_bracket
+    - sex_at_birth
+  ratio: 1
+  seed: 2026
+```
+
+In the September 6, 2026 verification run, this yielded 171 donor pairs:
+
+| Age bracket | Sex | Matched pairs |
+| --- | --- | ---: |
+| 60–69 | Female | 66 |
+| 60–69 | Male | 83 |
+| 70–79 | Female | 4 |
+| 70–79 | Male | 18 |
+
+The 342 selected donor rows are written to `matched_donors.tsv`. The complete audit in
+`matching.json` retains 242 donors that were not selected and records whether each was excluded due
+to a missing opposite-population stratum, surplus within a stratum, or missing matching metadata.
+
+This matched population is suitable for controlled source-specific descriptive work. It is not yet
+suitable for naïve TCGA-versus-GTEx differential expression: exact demographic balance does not
+remove postmortem, procurement, assay, processing, or unmeasured clinical differences.
 
 ## Inspect specimen context
 

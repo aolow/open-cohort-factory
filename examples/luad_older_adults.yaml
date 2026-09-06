@@ -40,3 +40,11 @@ comparability:
   preserve_source_effects: true
   missing_metadata: report
 
+matching:
+  enabled: true
+  method: exact
+  variables:
+    - age_bracket
+    - sex_at_birth
+  ratio: 1
+  seed: 2026

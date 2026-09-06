@@ -9,6 +9,7 @@ from rich.table import Table
 
 from .audit import methodological_warnings, summarize
 from .config import load_spec
+from .matching import exact_match
 from .models import BuildResult
 from .report import write_outputs
 from .sources.gdc import GDCClient
@@ -51,6 +52,7 @@ def build(
         specification=project, samples=samples, provenance=provenance, warnings=warnings
     )
     summary = summarize(samples, project)
+    summary["matching"] = exact_match(samples, project.matching)
     write_outputs(result, summary, output)
     console.print(
         f"[green]Built[/green] {summary['sample_count']} samples from "

@@ -35,6 +35,8 @@ the local documentation site with `uv run mkdocs serve`.
 - `manifest.json`: validated specification, normalized sample metadata, source query, and provenance
 - `summary.json`: donor-aware counts and metadata-completeness summary
 - `report.html`: a self-contained human-readable report with interpretation guardrails
+- `matching.json`: selected and excluded donors with strata and explicit reasons
+- `matched_donors.tsv`: analysis-ready table of deterministic donor pairs
 
 ## Reference contexts
 
@@ -58,6 +60,7 @@ comorbidity, or exposure.
 - Donors, rather than cells, are the independent unit for inferential single-cell comparisons.
 - Results remain stratified by source unless an explicit, documented harmonization method is used.
 - Every build records its source query, retrieval time, citations, and known metadata gaps.
+- Exact matching is performed at the donor level and never silently drops unmatched donors.
 
 ## Roadmap
 

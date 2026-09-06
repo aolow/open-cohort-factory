@@ -30,3 +30,21 @@ bulk resolution are currently materialized through the GTEx Portal V2 API using 
 
 `comparability` records intended stratification, minimum donor counts, handling of missing metadata,
 and whether source effects must remain visible.
+
+`matching` controls optional deterministic donor matching. The current implementation supports
+1:1 exact matching on `age_bracket`, `sex_at_birth`, or both. `seed` controls reproducible selection
+when a stratum contains more eligible donors than needed.
+
+```yaml
+matching:
+  enabled: true
+  method: exact
+  variables:
+    - age_bracket
+    - sex_at_birth
+  ratio: 1
+  seed: 2026
+```
+
+Selected pairs are written to `matched_donors.tsv`. `matching.json` also retains excluded donors and
+distinguishes missing matching fields, absent opposite-population strata, and surplus donors.
