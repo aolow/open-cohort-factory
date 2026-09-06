@@ -12,4 +12,3 @@ def load_spec(path: Path) -> ProjectSpec:
     with path.open(encoding="utf-8") as handle:
         payload = yaml.safe_load(handle)
     return ProjectSpec.model_validate(payload)
-

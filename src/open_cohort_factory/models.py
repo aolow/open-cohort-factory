@@ -84,6 +84,8 @@ class ProjectSpec(BaseModel):
 
 class SampleRecord(BaseModel):
     source: DataSource
+    cohort_role: Literal["disease", "reference"]
+    cohort_name: str
     project_id: str
     case_id: str
     sample_id: str
@@ -91,6 +93,7 @@ class SampleRecord(BaseModel):
     primary_site: str | None = None
     tissue_or_organ_of_origin: str | None = None
     age_at_index: int | None = None
+    age_bracket: str | None = None
     age_at_diagnosis_days: int | None = None
     sex_at_birth: str | None = None
     race: str | None = None
@@ -98,6 +101,13 @@ class SampleRecord(BaseModel):
     vital_status: str | None = None
     reference_context: ReferenceContext | None = None
     acquisition_context: str | None = None
+    assay_type: str | None = None
+    ischemic_time_minutes: int | None = None
+    rin: float | None = None
+    hardy_scale: str | None = None
+    autolysis_score: str | None = None
+    pathology_notes: str | None = None
+    pathology_categories_present: list[str] = Field(default_factory=list)
     metadata_missing: list[str] = Field(default_factory=list)
     source_payload: dict[str, Any] = Field(default_factory=dict, exclude=True)
 

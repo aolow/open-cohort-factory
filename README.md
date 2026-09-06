@@ -4,10 +4,10 @@ Open Cohort Factory builds reproducible disease cohorts and explicitly character
 populations from public biomedical data. It treats “normal” as a claim that requires evidence,
 not as a universal sample label.
 
-The initial release retrieves public case and sample metadata from the NCI Genomic Data Commons,
-normalizes it into a source-independent model, preserves tissue-acquisition context, and produces
-an auditable HTML report. The schema already represents GTEx and Tabula Sapiens reference panels;
-their data connectors are the next implementation milestone.
+The current release retrieves public case and sample metadata from the NCI Genomic Data Commons
+and GTEx, normalizes both into a source-independent model, preserves tissue-acquisition context,
+and produces an auditable HTML report. The schema also represents Tabula Sapiens reference panels;
+its data connector is the next implementation milestone.
 
 ## Why this exists
 
@@ -62,9 +62,9 @@ comorbidity, or exposure.
 ## Roadmap
 
 1. GDC cohort metadata, provenance, validation, and reporting
-2. GTEx bulk-tissue reference connector and age/sex comparability audit
+2. GTEx bulk-tissue reference connector and donor-level age/sex comparability audit
 3. Tabula Sapiens donor-aware cell-type reference connector
-4. Balance diagnostics, matching or weighting, and sensitivity analyses across reference panels
+4. Matching or weighting and sensitivity analyses across reference panels
 5. Assay-aware expression summaries and an interactive cohort explorer
 
 ## Data use

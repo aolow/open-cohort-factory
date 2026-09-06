@@ -24,9 +24,7 @@ def test_normalizes_samples_without_calling_adjacent_tissue_healthy() -> None:
                     "project": {"project_id": "TCGA-LUAD"},
                     "demographic": {"age_at_index": 67, "sex_at_birth": "female"},
                     "diagnoses": [{"tissue_or_organ_of_origin": "Upper lobe, lung"}],
-                    "samples": [
-                        {"sample_id": "sample-1", "sample_type": "Solid Tissue Normal"}
-                    ],
+                    "samples": [{"sample_id": "sample-1", "sample_type": "Solid Tissue Normal"}],
                 }
             ]
         }
@@ -36,10 +34,7 @@ def test_normalizes_samples_without_calling_adjacent_tissue_healthy() -> None:
         return httpx.Response(200, json=payload, request=request)
 
     client = GDCClient(httpx.Client(transport=httpx.MockTransport(handler)))
-    spec = DiseaseCohortSpec(
-        projects=["TCGA-LUAD"], sample_types=["Solid Tissue Normal"]
-    )
+    spec = DiseaseCohortSpec(projects=["TCGA-LUAD"], sample_types=["Solid Tissue Normal"])
     samples, _ = client.fetch(spec)
     assert samples[0].reference_context == ReferenceContext.ADJACENT_NON_TUMOR
     assert samples[0].acquisition_context == "cancer study participant"
-

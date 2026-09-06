@@ -115,6 +115,8 @@ class GDCClient:
                 continue
             record = SampleRecord(
                 source=DataSource.GDC,
+                cohort_role="disease",
+                cohort_name="disease_cohort",
                 project_id=project_id,
                 case_id=hit["case_id"],
                 sample_id=sample["sample_id"],
@@ -122,6 +124,7 @@ class GDCClient:
                 primary_site=hit.get("primary_site"),
                 tissue_or_organ_of_origin=_first(diagnoses, "tissue_or_organ_of_origin"),
                 age_at_index=demographic.get("age_at_index"),
+                age_bracket=_age_bracket(demographic.get("age_at_index")),
                 age_at_diagnosis_days=_first(diagnoses, "age_at_diagnosis"),
                 sex_at_birth=demographic.get("sex_at_birth") or demographic.get("gender"),
                 race=demographic.get("race"),
@@ -135,3 +138,10 @@ class GDCClient:
             record.metadata_missing = [name for name in required if getattr(record, name) is None]
             records.append(record)
         return records
+
+
+def _age_bracket(age: int | None) -> str | None:
+    if age is None:
+        return None
+    lower = age // 10 * 10
+    return f"{lower}-{lower + 9}"

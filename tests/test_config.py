@@ -16,4 +16,3 @@ def test_example_spec_is_valid() -> None:
 def test_age_range_must_be_ordered() -> None:
     with pytest.raises(ValidationError):
         AgeRange(minimum=70, maximum=60)
-

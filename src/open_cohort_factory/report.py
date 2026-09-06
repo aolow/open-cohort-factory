@@ -44,6 +44,23 @@ TEMPLATE = """<!doctype html>
   <h2>Reference panels</h2>
   <table><thead><tr><th>Name</th><th>Source</th><th>Tissue</th><th>Context</th><th>Resolution</th><th>Status</th></tr></thead>
   <tbody>{% for panel in summary.reference_panels %}<tr><td>{{ panel.name }}</td><td>{{ panel.source }}</td><td>{{ panel.tissue }}</td><td><code>{{ panel.context }}</code></td><td>{{ panel.resolution }}</td><td>{{ panel.status }}</td></tr>{% endfor %}</tbody></table>
+  <h2>Population comparison</h2>
+  <table><thead><tr><th>Role</th><th>Population</th><th>Source</th><th>Samples</th><th>Donors</th><th>Age brackets</th><th>Sex</th></tr></thead>
+  <tbody>{% for population in summary.populations %}<tr><td>{{ population.role }}</td><td>{{ population.name }}</td><td>{{ population.source }}</td><td>{{ population.samples }}</td><td>{{ population.donors }}</td><td>{{ population.age_brackets }}</td><td>{{ population.sex }}</td></tr>{% endfor %}</tbody></table>
+  <h2>Comparability assessment</h2>
+  {% for comparison in summary.comparability %}
+  <div class="card">
+    <h3>{{ comparison.reference_panel }}</h3>
+    <p><strong>Decision:</strong> <code>{{ comparison.decision }}</code></p>
+    <p><strong>Disease age brackets:</strong> {{ comparison.disease_age_brackets }}</p>
+    <p><strong>Reference age brackets:</strong> {{ comparison.reference_age_brackets }}</p>
+    <p><strong>Female proportion:</strong> disease {{ comparison.female_proportion.disease }}, reference {{ comparison.female_proportion.reference }}, absolute difference {{ comparison.female_proportion.absolute_difference }}</p>
+    <p><strong>Recommended actions</strong></p>
+    <ul>{% for action in comparison.recommended_actions %}<li>{{ action }}</li>{% endfor %}</ul>
+    <p><strong>Most frequent recorded specimen findings</strong></p>
+    <ul>{% for item in comparison.top_reference_pathology_categories %}<li>{{ item.category }}: {{ item.samples }} samples</li>{% else %}<li>No affirmative pathology categories recorded.</li>{% endfor %}</ul>
+  </div>
+  {% else %}<p>No reference panel has been materialized.</p>{% endfor %}
   <h2>Interpretation guardrails</h2>
   {% for warning in result.warnings %}<div class="warning">{{ warning }}</div>{% endfor %}
   <h2>Metadata completeness</h2>
@@ -60,8 +77,9 @@ def write_outputs(result: BuildResult, summary: dict[str, Any], output_dir: Path
         json.dumps(result.model_dump(mode="json"), indent=2), encoding="utf-8"
     )
     (output_dir / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
-    html = Environment(loader=BaseLoader(), autoescape=True).from_string(TEMPLATE).render(
-        result=result, summary=summary
+    html = (
+        Environment(loader=BaseLoader(), autoescape=True)
+        .from_string(TEMPLATE)
+        .render(result=result, summary=summary)
     )
     (output_dir / "report.html").write_text(html, encoding="utf-8")
-

@@ -1,11 +1,12 @@
 # Older adults with lung adenocarcinoma
 
-This vignette builds a public TCGA lung adenocarcinoma cohort restricted to adults aged 60 or older.
-It also declares two future reference panels: bulk postmortem lung from GTEx and a cell-type-level
+This vignette builds a public TCGA lung adenocarcinoma cohort restricted to adults aged 60 or older,
+materializes bulk postmortem lung metadata from GTEx, and declares a future cell-type-level
 organ-donor lung reference from Tabula Sapiens.
 
-The purpose is not yet to compare expression values. It is to establish an auditable disease cohort
-and make the intended reference populations—and their limitations—explicit before analysis begins.
+The purpose is not yet to compare expression values. It is to determine whether the disease and
+reference populations support that analysis and which adjustments or sensitivity analyses would
+be required first.
 
 ## Inspect the specification
 
@@ -74,16 +75,61 @@ sample count because a donor may contribute more than one qualifying sample.
 
 ## Interpret the current report
 
-The report answers four initial questions:
+The report answers six initial questions:
 
 1. How many qualifying donors and samples were found?
 2. Are age and sex metadata present for the selected records?
 3. Which reference panels are intended, and how was their tissue acquired?
 4. Which methodological warnings must be resolved before quantitative comparison?
+5. Which disease-cohort age strata are missing from the reference panel?
+6. How different are the donor-level sex distributions and recorded specimen findings?
 
-The reference panels currently appear as `declared_not_materialized`. This is intentional. The
-configuration is ready for the GTEx and Tabula Sapiens adapters, but the current release has not
-downloaded or harmonized those matrices.
+The GTEx panel appears as `materialized`; Tabula Sapiens remains
+`declared_not_materialized`. Neither status implies that expression matrices have been harmonized.
+
+## Follow the analysis decision
+
+In a verified run on September 6, 2026, the configuration produced:
+
+| Population | Donors | Age distribution | Female proportion |
+| --- | ---: | --- | ---: |
+| TCGA-LUAD disease cohort | 364 | 60–69: 46.7%; 70–79: 44.5%; 80–89: 8.8% | 52.7% |
+| GTEx lung reference | 220 | 60–69: 90.0%; 70–79: 10.0% | 31.8% |
+
+Counts may change as public sources evolve. The important result is the decision: the GTEx panel is
+`context_only_for_full_cohort` because it does not cover the disease cohort's 80–89 age stratum and
+its sex distribution is materially different.
+
+The report therefore recommends:
+
+1. Keep TCGA and GTEx summaries source-specific.
+2. Restrict the primary matched analysis to covered ages or report older patients separately.
+3. Stratify or weight descriptive comparisons by sex.
+4. Examine sensitivity to GTEx pathology annotations.
+5. Do not perform cross-study differential expression without assay-aware harmonization.
+
+This is the intended workflow: cohort construction leads to an explicit analytical decision, not
+automatically to a statistical test.
+
+Generate a concise decision memo from any completed build:
+
+```bash
+uv run python examples/inspect_comparability.py outputs/luad/summary.json
+```
+
+This example consumes the machine-readable comparability result rather than reimplementing its
+logic in a notebook. It can serve as the handoff between cohort construction and a downstream
+analysis plan, workflow manager, or review document.
+
+## Inspect specimen context
+
+The GTEx connector preserves affirmative specimen-pathology categories and collection-related
+variables. In the verified lung run, frequently recorded findings included congestion, emphysema,
+fibrosis, edema, and hemorrhage. These observations show why `postmortem_reference` is more precise
+than an unqualified `normal` label.
+
+The manifest also retains RIN, ischemic time, Hardy death scale, autolysis score, tissue ontology,
+and free-text pathology notes when supplied by the public API. Missing annotations remain unknown.
 
 ## What this prevents
 
@@ -97,8 +143,6 @@ The workflow prevents several quiet analytical errors:
 
 ## Next extension
 
-The GTEx adapter will materialize donor/sample metadata before expression data. That enables age and
-sex overlap plots, source-specific missingness, and eligibility-context review before any molecular
-comparison. The Tabula Sapiens adapter will then add donor-aware cell-type summaries while keeping
-organ-donor context and study effects visible.
-
+The next analytical extension will add an explicit matched-subcohort export rather than silently
+discarding unmatched donors. The Tabula Sapiens adapter can then add donor-aware cell-type summaries
+while keeping organ-donor context and study effects visible.

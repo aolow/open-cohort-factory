@@ -17,10 +17,13 @@ data model, provenance, and final report.
 - Preserve donor/sample nesting and tissue-acquisition context.
 - Record the exact source query, retrieval time, and citation.
 - Generate JSON manifests, summary statistics, and a self-contained HTML report.
-- Declare GTEx, Tabula Sapiens, and CELLxGENE reference panels in the same specification.
+- Materialize GTEx RNA-seq sample metadata, including age bracket, sex, RIN, ischemic time,
+  Hardy scale, autolysis, and pathology annotations.
+- Compare disease and reference populations at the donor level and recommend analysis safeguards.
+- Declare Tabula Sapiens and CELLxGENE reference panels in the same specification.
 
-The GTEx and Tabula Sapiens connectors are planned but not yet materialized. Reports label them
-accordingly so a declaration cannot be mistaken for downloaded or analyzed data.
+The Tabula Sapiens connector is planned but not yet materialized. Reports label it accordingly so
+a declaration cannot be mistaken for downloaded or analyzed data.
 
 ## First workflow
 
@@ -32,4 +35,3 @@ uv run cohort-factory build examples/luad_older_adults.yaml --output outputs/lua
 
 Continue with the [installation guide](installation.md) or work through the
 [lung adenocarcinoma vignette](vignettes/luad-older-adults.md).
-
