@@ -27,6 +27,8 @@ project identifiers, primary site, age range, sex at birth, and sample type.
 `reference_panels` declares one or more contextual comparator populations. Each panel requires a
 source, tissue, acquisition context, resolution, and optional age limits and notes. GTEx panels with
 bulk resolution are currently materialized through the GTEx Portal V2 API using RNA-seq samples.
+Tabula Sapiens panels with cell-type resolution are queried through the pinned CELLxGENE Census LTS
+release and emitted as donor × cell-type aggregate records.
 
 `comparability` records intended stratification, minimum donor counts, handling of missing metadata,
 and whether source effects must remain visible.

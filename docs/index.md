@@ -20,15 +20,18 @@ data model, provenance, and final report.
 - Materialize GTEx RNA-seq sample metadata, including age bracket, sex, RIN, ischemic time,
   Hardy scale, autolysis, and pathology annotations.
 - Compare disease and reference populations at the donor level and recommend analysis safeguards.
-- Declare Tabula Sapiens and CELLxGENE reference panels in the same specification.
+- Materialize Tabula Sapiens metadata as donor × cell-type aggregates through a pinned CELLxGENE
+  Census release.
+- Report both cell counts and donor coverage for every cell type.
+- Declare additional CELLxGENE reference panels in the same specification.
 
-The Tabula Sapiens connector is planned but not yet materialized. Reports label it accordingly so
-a declaration cannot be mistaken for downloaded or analyzed data.
+Single-cell support is optional because its local dependency stack is substantially larger than the
+GDC and GTEx metadata clients.
 
 ## First workflow
 
 ```bash
-uv sync --all-extras --dev
+uv sync --extra dev --extra single-cell
 uv run cohort-factory validate examples/luad_older_adults.yaml
 uv run cohort-factory build examples/luad_older_adults.yaml --output outputs/luad
 ```

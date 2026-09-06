@@ -86,8 +86,8 @@ The report answers six initial questions:
 5. Which disease-cohort age strata are missing from the reference panel?
 6. How different are the donor-level sex distributions and recorded specimen findings?
 
-The GTEx panel appears as `materialized`; Tabula Sapiens remains
-`declared_not_materialized`. Neither status implies that expression matrices have been harmonized.
+Both GTEx and Tabula Sapiens panels appear as `materialized`. This status means their relevant
+metadata were retrieved and normalized; it does not imply that expression matrices were harmonized.
 
 ## Follow the analysis decision
 
@@ -155,6 +155,27 @@ This matched population is suitable for controlled source-specific descriptive w
 suitable for naïve TCGA-versus-GTEx differential expression: exact demographic balance does not
 remove postmortem, procurement, assay, processing, or unmeasured clinical differences.
 
+## Add cellular context without inflating the evidence
+
+The same build queries the tissue-specific Tabula Sapiens lung dataset through CELLxGENE Census.
+For the configured age of 60 or older, the verified run returned:
+
+- 36,364 cells
+- 89 donor × cell-type aggregate records
+- Two eligible donors: one female and one male
+- Cell ontology identifiers retained alongside labels
+
+The most abundant captured populations included alveolar type 2 cells, macrophages, capillary
+endothelial cells, basal cells, monocytes, club cells, and T cells. The report shows donor coverage
+beside every cell count; a population with thousands of cells from two people is still evidence from
+two people.
+
+The comparability decision is therefore `insufficient_reference_donors`. Tabula Sapiens can inform
+which cell types may contribute to a bulk lung signal, but this subset cannot support population-level
+inference about older adults with lung cancer. Even though the matcher can construct two exact
+demographic pairs, those pairs are retained only as an auditable demonstration—not as an adequately
+powered inferential cohort.
+
 ## Inspect specimen context
 
 The GTEx connector preserves affirmative specimen-pathology categories and collection-related
@@ -177,6 +198,6 @@ The workflow prevents several quiet analytical errors:
 
 ## Next extension
 
-The next analytical extension will add an explicit matched-subcohort export rather than silently
-discarding unmatched donors. The Tabula Sapiens adapter can then add donor-aware cell-type summaries
-while keeping organ-donor context and study effects visible.
+The next analytical extension should retrieve a small, user-selected gene panel from each source and
+produce source-specific expression summaries. It should preserve donor-level uncertainty and avoid
+pretending that TCGA, GTEx, and single-cell measurements share an interchangeable scale.

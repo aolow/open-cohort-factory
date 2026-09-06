@@ -124,6 +124,11 @@ class SampleRecord(BaseModel):
     autolysis_score: str | None = None
     pathology_notes: str | None = None
     pathology_categories_present: list[str] = Field(default_factory=list)
+    cell_type: str | None = None
+    cell_type_ontology_term_id: str | None = None
+    cell_count: int | None = None
+    development_stage: str | None = None
+    disease_label: str | None = None
     metadata_missing: list[str] = Field(default_factory=list)
     source_payload: dict[str, Any] = Field(default_factory=dict, exclude=True)
 

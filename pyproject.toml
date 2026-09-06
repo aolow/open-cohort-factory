@@ -29,6 +29,9 @@ dev = [
   "ruff>=0.6,<1",
   "types-PyYAML>=6,<7",
 ]
+single-cell = [
+  "cellxgene-census>=1.17,<2",
+]
 
 [project.scripts]
 cohort-factory = "open_cohort_factory.cli:app"

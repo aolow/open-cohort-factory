@@ -21,7 +21,9 @@ def _proportion(counts: Counter[str], category: str) -> float | None:
     return round(counts[category] / total, 3) if total else None
 
 
-def compare_populations(samples: list[SampleRecord]) -> list[dict[str, Any]]:
+def compare_populations(
+    samples: list[SampleRecord], minimum_reference_donors: int = 5
+) -> list[dict[str, Any]]:
     """Compare each materialized reference panel with the disease cohort."""
     donors = _unique_donors(samples)
     disease = [sample for sample in donors if sample.cohort_role == "disease"]
@@ -50,7 +52,9 @@ def compare_populations(samples: list[SampleRecord]) -> list[dict[str, Any]]:
             category for sample in reference for category in sample.pathology_categories_present
         )
 
-        if uncovered:
+        if len(reference) < minimum_reference_donors:
+            decision = "insufficient_reference_donors"
+        elif uncovered:
             decision = "context_only_for_full_cohort"
         elif sex_difference is not None and sex_difference >= 0.1:
             decision = "requires_stratification_or_weighting"
@@ -75,16 +79,31 @@ def compare_populations(samples: list[SampleRecord]) -> list[dict[str, Any]]:
                     for category, count in pathology.most_common(10)
                 ],
                 "decision": decision,
-                "recommended_actions": _recommendations(uncovered, sex_difference, bool(pathology)),
+                "recommended_actions": _recommendations(
+                    uncovered,
+                    sex_difference,
+                    bool(pathology),
+                    len(reference),
+                    minimum_reference_donors,
+                ),
             }
         )
     return comparisons
 
 
 def _recommendations(
-    uncovered_age_brackets: list[str], sex_difference: float | None, has_pathology: bool
+    uncovered_age_brackets: list[str],
+    sex_difference: float | None,
+    has_pathology: bool,
+    reference_donors: int,
+    minimum_reference_donors: int,
 ) -> list[str]:
     actions = ["Keep source-specific results separate in all descriptive summaries."]
+    if reference_donors < minimum_reference_donors:
+        actions.append(
+            "Use this panel only for descriptive context; it does not meet the configured minimum "
+            f"of {minimum_reference_donors} reference donors."
+        )
     if uncovered_age_brackets:
         actions.append(
             "Restrict the disease cohort to reference-covered ages or report uncovered ages "

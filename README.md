@@ -4,10 +4,10 @@ Open Cohort Factory builds reproducible disease cohorts and explicitly character
 populations from public biomedical data. It treats “normal” as a claim that requires evidence,
 not as a universal sample label.
 
-The current release retrieves public case and sample metadata from the NCI Genomic Data Commons
-and GTEx, normalizes both into a source-independent model, preserves tissue-acquisition context,
-and produces an auditable HTML report. The schema also represents Tabula Sapiens reference panels;
-its data connector is the next implementation milestone.
+The current release retrieves public case and sample metadata from the NCI Genomic Data Commons and
+GTEx, plus donor-aware cell metadata from Tabula Sapiens through the CELLxGENE Census. It normalizes
+all three into a source-independent model, preserves tissue-acquisition context, and produces an
+auditable HTML report.
 
 ## Why this exists
 
@@ -21,11 +21,14 @@ This project keeps those distinctions visible.
 Requirements: Python 3.11 or newer and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-uv sync --all-extras --dev
+uv sync --extra dev
 uv run cohort-factory validate examples/luad_older_adults.yaml
 uv run cohort-factory build examples/luad_older_adults.yaml --output outputs/luad
 open outputs/luad/report.html
 ```
+
+To materialize single-cell reference panels such as Tabula Sapiens, install the optional stack with
+`uv sync --extra dev --extra single-cell`.
 
 For complete setup instructions, concepts, and a worked example, see the `docs/` directory. Build
 the local documentation site with `uv run mkdocs serve`.
@@ -67,7 +70,8 @@ comorbidity, or exposure.
 1. GDC cohort metadata, provenance, validation, and reporting
 2. GTEx bulk-tissue reference connector and donor-level age/sex comparability audit
 3. Tabula Sapiens donor-aware cell-type reference connector
-4. Matching or weighting and sensitivity analyses across reference panels
+4. Matching and auditable sensitivity analyses across reference panels
+5. Donor-aware expression summaries without downloading whole-atlas matrices
 5. Assay-aware expression summaries and an interactive cohort explorer
 
 ## Data use

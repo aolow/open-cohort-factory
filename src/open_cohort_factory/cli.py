@@ -14,6 +14,7 @@ from .models import BuildResult
 from .report import write_outputs
 from .sources.gdc import GDCClient
 from .sources.gtex import GTExClient
+from .sources.tabula_sapiens import TabulaSapiensClient
 
 app = typer.Typer(no_args_is_help=True, help="Build reproducible public-data cohorts.")
 console = Console()
@@ -41,10 +42,14 @@ def build(
         samples, disease_provenance = GDCClient().fetch(project.disease_cohort)
     provenance = [disease_provenance]
     for panel in project.reference_panels:
-        if panel.source.value != "gtex":
+        if panel.source.value == "gtex":
+            with console.status(f"Retrieving public GTEx metadata for {panel.name}..."):
+                reference_samples, reference_provenance = GTExClient().fetch(panel)
+        elif panel.source.value == "tabula_sapiens":
+            with console.status(f"Retrieving Tabula Sapiens cell metadata for {panel.name}..."):
+                reference_samples, reference_provenance = TabulaSapiensClient().fetch(panel)
+        else:
             continue
-        with console.status(f"Retrieving public GTEx metadata for {panel.name}..."):
-            reference_samples, reference_provenance = GTExClient().fetch(panel)
         samples.extend(reference_samples)
         provenance.append(reference_provenance)
     warnings = methodological_warnings(project, samples)
@@ -55,7 +60,7 @@ def build(
     summary["matching"] = exact_match(samples, project.matching)
     write_outputs(result, summary, output)
     console.print(
-        f"[green]Built[/green] {summary['sample_count']} samples from "
+        f"[green]Built[/green] {summary['sample_count']} normalized records from "
         f"{summary['donor_count']} donors in {output}"
     )
 

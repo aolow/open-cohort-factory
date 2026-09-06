@@ -37,7 +37,7 @@ TEMPLATE = """<!doctype html>
   <h1>{{ result.specification.name }}</h1>
   <p class="lede">{{ result.specification.description }}</p>
   <div class="grid">
-    <div class="card"><div class="metric">{{ summary.sample_count }}</div><div class="label">samples</div></div>
+    <div class="card"><div class="metric">{{ summary.sample_count }}</div><div class="label">normalized records</div></div>
     <div class="card"><div class="metric">{{ summary.donor_count }}</div><div class="label">donors</div></div>
     <div class="card"><div class="metric">{{ summary.age.mean if summary.age.mean is not none else "—" }}</div><div class="label">disease-cohort mean age</div></div>
     <div class="card"><div class="metric">{{ summary.reference_panels|length }}</div><div class="label">declared reference panels</div></div>
@@ -46,8 +46,8 @@ TEMPLATE = """<!doctype html>
   <table><thead><tr><th>Name</th><th>Source</th><th>Tissue</th><th>Context</th><th>Resolution</th><th>Status</th></tr></thead>
   <tbody>{% for panel in summary.reference_panels %}<tr><td>{{ panel.name }}</td><td>{{ panel.source }}</td><td>{{ panel.tissue }}</td><td><code>{{ panel.context }}</code></td><td>{{ panel.resolution }}</td><td>{{ panel.status }}</td></tr>{% endfor %}</tbody></table>
   <h2>Population comparison</h2>
-  <table><thead><tr><th>Role</th><th>Population</th><th>Source</th><th>Samples</th><th>Donors</th><th>Age brackets</th><th>Sex</th></tr></thead>
-  <tbody>{% for population in summary.populations %}<tr><td>{{ population.role }}</td><td>{{ population.name }}</td><td>{{ population.source }}</td><td>{{ population.samples }}</td><td>{{ population.donors }}</td><td>{{ population.age_brackets }}</td><td>{{ population.sex }}</td></tr>{% endfor %}</tbody></table>
+  <table><thead><tr><th>Role</th><th>Population</th><th>Source</th><th>Records</th><th>Donors</th><th>Cells</th><th>Age brackets</th><th>Sex</th></tr></thead>
+  <tbody>{% for population in summary.populations %}<tr><td>{{ population.role }}</td><td>{{ population.name }}</td><td>{{ population.source }}</td><td>{{ population.samples }}</td><td>{{ population.donors }}</td><td>{{ population.cells if population.cells is not none else "—" }}</td><td>{{ population.age_brackets }}</td><td>{{ population.sex }}</td></tr>{% endfor %}</tbody></table>
   <h2>Comparability assessment</h2>
   {% for comparison in summary.comparability %}
   <div class="card">
@@ -72,6 +72,15 @@ TEMPLATE = """<!doctype html>
     <p>{{ match.excluded_donors|length }} donor records were not selected. Reasons are retained in <code>matching.json</code>.</p>
   </div>
   {% else %}<p>Matching is disabled or no reference panel has been materialized.</p>{% endfor %}
+  <h2>Single-cell reference context</h2>
+  {% for panel in summary.cell_type_summaries %}
+  <div class="card">
+    <h3>{{ panel.reference_panel }}</h3>
+    <p>{{ panel.total_cells }} cells summarized across {{ panel.total_donors }} eligible donors. Cell counts describe sampling depth; donor coverage determines the population evidence.</p>
+    <table><thead><tr><th>Cell type</th><th>Ontology</th><th>Cells</th><th>Donors represented</th></tr></thead>
+    <tbody>{% for row in panel.cell_types[:20] %}<tr><td>{{ row.cell_type }}</td><td><code>{{ row.ontology_term_id }}</code></td><td>{{ row.cells }}</td><td>{{ row.donors }}</td></tr>{% endfor %}</tbody></table>
+  </div>
+  {% else %}<p>No single-cell reference panel has been materialized.</p>{% endfor %}
   <h2>Interpretation guardrails</h2>
   {% for warning in result.warnings %}<div class="warning">{{ warning }}</div>{% endfor %}
   <h2>Metadata completeness</h2>

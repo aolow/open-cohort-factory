@@ -23,7 +23,8 @@ src/open_cohort_factory/
 ├── report.py      # self-contained HTML output
 └── sources/
     ├── gdc.py     # public GDC adapter
-    └── gtex.py    # public GTEx Portal API adapter
+    ├── gtex.py    # public GTEx Portal API adapter
+    └── tabula_sapiens.py # donor-aware CELLxGENE Census adapter
 ```
 
 ## Adding a data source

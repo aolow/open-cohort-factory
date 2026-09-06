@@ -35,11 +35,17 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 ```bash
 git clone https://github.com/aolow/open-cohort-factory.git
 cd open-cohort-factory
-uv sync --all-extras --dev
+uv sync --extra dev
 ```
 
 The repository is currently private. Anyone cloning it must first be granted access by its owner
 and authenticate with GitHub.
+
+To use Tabula Sapiens or other CELLxGENE Census reference panels:
+
+```bash
+uv sync --extra dev --extra single-cell
+```
 
 ## Verify the installation
 
@@ -61,4 +67,3 @@ development:
 ```bash
 uv run mkdocs build --strict
 ```
-

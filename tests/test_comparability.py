@@ -33,4 +33,4 @@ def test_flags_age_coverage_and_sex_imbalance_at_donor_level() -> None:
     comparison = compare_populations(samples)[0]
     assert comparison["uncovered_disease_age_brackets"] == ["80-89"]
     assert comparison["female_proportion"]["absolute_difference"] == 1.0
-    assert comparison["decision"] == "context_only_for_full_cohort"
+    assert comparison["decision"] == "insufficient_reference_donors"

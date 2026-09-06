@@ -27,6 +27,7 @@ def summarize(samples: list[SampleRecord], spec: ProjectSpec) -> dict[str, Any]:
                 "source": members[0].source.value,
                 "samples": len(members),
                 "donors": len(donor_members),
+                "cells": sum(sample.cell_count or 0 for sample in members) or None,
                 "age_brackets": dict(
                     Counter(sample.age_bracket or "unknown" for sample in donor_members)
                 ),
@@ -47,7 +48,10 @@ def summarize(samples: list[SampleRecord], spec: ProjectSpec) -> dict[str, Any]:
         },
         "missing_fields": dict(missing),
         "populations": population_rows,
-        "comparability": compare_populations(samples),
+        "comparability": compare_populations(
+            samples, minimum_reference_donors=spec.comparability.minimum_donors_per_group
+        ),
+        "cell_type_summaries": _cell_type_summaries(samples),
         "reference_panels": [
             {
                 "name": panel.name,
@@ -91,3 +95,33 @@ def methodological_warnings(spec: ProjectSpec, samples: list[SampleRecord]) -> l
             "establish the absence of every comorbidity or exposure."
         )
     return warnings
+
+
+def _cell_type_summaries(samples: list[SampleRecord]) -> list[dict[str, Any]]:
+    panels = sorted({sample.cohort_name for sample in samples if sample.cell_type is not None})
+    results: list[dict[str, Any]] = []
+    for panel in panels:
+        members = [sample for sample in samples if sample.cohort_name == panel]
+        cell_types = sorted(
+            {sample.cell_type for sample in members if sample.cell_type is not None}
+        )
+        rows: list[dict[str, Any]] = []
+        for cell_type in cell_types:
+            typed = [sample for sample in members if sample.cell_type == cell_type]
+            rows.append(
+                {
+                    "cell_type": cell_type,
+                    "ontology_term_id": typed[0].cell_type_ontology_term_id,
+                    "cells": sum(sample.cell_count or 0 for sample in typed),
+                    "donors": len({sample.case_id for sample in typed}),
+                }
+            )
+        results.append(
+            {
+                "reference_panel": panel,
+                "total_cells": sum(row["cells"] for row in rows),
+                "total_donors": len({sample.case_id for sample in members}),
+                "cell_types": sorted(rows, key=lambda row: row["cells"], reverse=True),
+            }
+        )
+    return results
