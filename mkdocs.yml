@@ -1,0 +1,31 @@
+site_name: Open Cohort Factory
+site_description: Reproducible disease cohorts and explicitly characterized reference populations
+repo_url: https://github.com/aolow/open-cohort-factory
+repo_name: aolow/open-cohort-factory
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - content.code.copy
+
+nav:
+  - Overview: index.md
+  - Installation: installation.md
+  - Concepts: concepts.md
+  - Vignettes:
+      - Older adults with lung adenocarcinoma: vignettes/luad-older-adults.md
+  - Command reference: reference.md
+  - Development: development.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.details
+  - pymdownx.superfences
+  - toc:
+      permalink: true
+
+strict: true
+

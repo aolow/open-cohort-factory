@@ -27,6 +27,9 @@ uv run cohort-factory build examples/luad_older_adults.yaml --output outputs/lua
 open outputs/luad/report.html
 ```
 
+For complete setup instructions, concepts, and a worked example, see the `docs/` directory. Build
+the local documentation site with `uv run mkdocs serve`.
+
 ## Outputs
 
 - `manifest.json`: validated specification, normalized sample metadata, source query, and provenance
@@ -69,4 +72,3 @@ comorbidity, or exposure.
 The software is MIT licensed. Downloaded data remain governed by their original source terms and
 are not committed to this repository. Users are responsible for reviewing the applicable data-use
 policies and citations for each generated cohort.
-
