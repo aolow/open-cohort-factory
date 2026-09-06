@@ -187,6 +187,23 @@ unit. Separately, 42 TCGA participants had both primary-tumor and adjacent-tissu
 
 Values are differences of medians on the `log2(TPM + 1)` scale. They are descriptive effect
 summaries, not claims that postmortem GTEx lung represents a universally healthy counterfactual.
+The report adds donor-level IQRs and 95% bootstrap intervals; paired populations are resampled as
+pairs. In the verified run, the interval for MSLN crossed zero in the matched GTEx and both adjacent
+analyses, while CEACAM5 and EPCAM remained positive. This distinguishes an unstable reference-sensitive
+signal from a consistently directed one.
+
+## Audit hidden covariates
+
+The covariate landscape shows both distributions and whether each variable was collected. In this
+example, age and sex are broadly available, but race, ethnicity, and vital status are available in
+GDC and absent from the selected GTEx and Tabula Sapiens metadata. Conversely, ischemic time, RIN,
+Hardy death classification, and detailed specimen pathology are available for GTEx but absent from
+the GDC cohort representation. These are not ordinary random missing values: availability is tied to
+source and therefore to disease/reference status.
+
+The practical conclusion is that matching age and sex improves the comparison without making it
+fully adjusted. Procurement and specimen-quality effects remain entangled with the definition of
+the reference population and must stay visible in interpretation.
 
 ## Add cellular context without inflating the evidence
 

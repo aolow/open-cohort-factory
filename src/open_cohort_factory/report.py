@@ -28,7 +28,7 @@ TEMPLATE = """<!doctype html>
     .metric { font-size:2rem; font-weight:700; color:var(--accent); }
     .label { color:var(--muted); font-size:.9rem; }
     table { width:100%; border-collapse:collapse; background:white; }
-    th,td { border:1px solid var(--line); padding:10px 12px; text-align:left; }
+    th,td { border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top; overflow-wrap:anywhere; }
     th { background:#e8f1f3; } code { background:#e9edf2; padding:2px 5px; border-radius:4px; }
     .warning { border-left:4px solid #d97706; padding:8px 14px; margin:10px 0; background:#fffaf0; }
     .flow { display:grid; grid-template-columns:1fr auto 1fr auto minmax(240px,1.35fr); align-items:center; gap:12px; margin:28px 0; }
@@ -49,6 +49,11 @@ TEMPLATE = """<!doctype html>
     .dot { position:absolute; top:4px; width:10px; height:10px; border-radius:50%; background:var(--gtex); transform:translateX(-50%); }
     .estimate:nth-child(2) .dot { background:#4d9acb; }.estimate:nth-child(3) .dot { background:var(--adjacent); }.estimate:nth-child(4) .dot { background:#b07bd3; }
     .value { text-align:right; font-variant-numeric:tabular-nums; font-weight:650; }
+    .availability { min-width:105px; }.coverage-bar { height:8px; background:#edf1f5; border-radius:5px; overflow:hidden; margin-top:4px; }
+    .coverage-fill { display:block; height:100%; background:var(--accent); }.confounded { color:#a64b00; font-weight:700; }
+    .covariate-note { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px; margin:14px 0; }
+    .covariate-note > div { border-left:4px solid #d97706; background:#fffaf0; padding:10px 13px; }
+    .ci { position:absolute; top:8px; height:2px; background:var(--ink); opacity:.55; }
     @media (max-width:720px) { .flow { grid-template-columns:1fr; }.arrow { transform:rotate(90deg); text-align:center; }.axis { margin-left:0; }.gene-plot { grid-template-columns:1fr; }.estimate { grid-template-columns:1fr; gap:2px; padding:5px 0; } }
   </style>
 </head>
@@ -82,6 +87,11 @@ TEMPLATE = """<!doctype html>
   <h2>Population comparison</h2>
   <table><thead><tr><th>Role</th><th>Population</th><th>Source</th><th>Records</th><th>Donors</th><th>Cells</th><th>Age brackets</th><th>Sex</th></tr></thead>
   <tbody>{% for population in summary.populations %}<tr><td>{{ population.role }}</td><td>{{ population.name }}</td><td>{{ population.source }}</td><td>{{ population.samples }}</td><td>{{ population.donors }}</td><td>{{ population.cells if population.cells is not none else "—" }}</td><td>{{ population.age_brackets }}</td><td>{{ population.sex }}</td></tr>{% endfor %}</tbody></table>
+  <h2>Covariate landscape</h2>
+  <p>{{ summary.covariate_landscape.interpretation }}</p>
+  <table><thead><tr><th>Covariate</th>{% for population in summary.covariate_landscape.populations %}<th>{{ population }}</th>{% endfor %}<th>Assessment</th></tr></thead>
+  <tbody>{% for field in summary.covariate_landscape.fields %}<tr><td><strong>{{ field.label }}</strong><br><small>{{ field.role }}</small></td>{% for item in field.coverage %}<td class="availability"><strong>{{ item.percent }}%</strong> known<div class="coverage-bar"><span class="coverage-fill" style="width:{{ item.percent }}%"></span></div>{% if item.detail.median is defined %}<small>median {{ item.detail.median }}; {{ item.detail.minimum }}–{{ item.detail.maximum }}</small>{% elif item.detail.top_values is defined %}<small>{% for value in item.detail.top_values %}{{ value.value }} ({{ value.donors }}){% if not loop.last %}; {% endif %}{% endfor %}</small>{% endif %}</td>{% endfor %}<td>{% if field.availability_status == "source_confounded" %}<span class="confounded">source-confounded availability</span>{% elif field.availability_status == "unavailable" %}unavailable in all panels{% elif field.distribution_shift %}<span class="confounded">distribution differs across populations</span>{% else %}no large observed shift{% endif %}</td></tr>{% endfor %}</tbody></table>
+  <div class="covariate-note">{% for field in summary.covariate_landscape.fields %}{% if field.source_confounded_availability %}<div><strong>{{ field.label }}</strong><br>Availability differs sharply across populations; adjustment may select a source-specific subset.</div>{% elif field.distribution_shift %}<div><strong>{{ field.label }}</strong><br>Observed distributions differ across sufficiently represented populations (maximum distance {{ field.maximum_distribution_distance }}).</div>{% endif %}{% endfor %}</div>
   <h2>Comparability assessment</h2>
   {% for comparison in summary.comparability %}
   <div class="card">
@@ -114,15 +124,15 @@ TEMPLATE = """<!doctype html>
     <h3>How the reference definition changes the signal</h3>
     <div class="axis"><span>{{ summary.expression.sensitivity_chart.minimum }}</span><span>tumor − reference median difference</span><span>+{{ summary.expression.sensitivity_chart.maximum }}</span></div>
     {% for gene in summary.expression.sensitivity_chart.genes %}<div class="gene-plot"><div class="gene-label">{{ gene.gene }}</div><div class="estimate-list">
-      {% for estimate in gene.estimates %}<div class="estimate"><span>{{ estimate.comparison }}</span><div class="track"><span class="dot" style="left:{{ estimate.position }}%"></span></div><span class="value">{{ estimate.value }}</span></div>{% endfor %}
+      {% for estimate in gene.estimates %}<div class="estimate"><span>{{ estimate.comparison }}</span><div class="track"><span class="ci" style="left:{{ estimate.ci_left }}%;width:{{ estimate.ci_width }}%"></span><span class="dot" style="left:{{ estimate.position }}%"></span></div><span class="value">{{ estimate.value }}<br><small>{{ estimate.ci_lower }}, {{ estimate.ci_upper }}</small></span></div>{% endfor %}
     </div></div>{% endfor %}
   </div>
   {% for analysis in summary.expression.comparisons %}
   <div class="card"><h3>{{ analysis.name }}</h3>
     {% if analysis.complete_expression_pairs is defined %}<p><strong>{{ analysis.complete_expression_pairs }}</strong> matched pairs had expression available for both donors.</p>{% endif %}
     {% if analysis.within_donor_pairs is defined %}<p><strong>{{ analysis.within_donor_pairs }}</strong> participants contributed both tumor and adjacent non-tumor expression.</p>{% endif %}
-    <table><thead><tr><th>Gene</th><th>Disease samples</th><th>Reference samples</th><th>Disease median</th><th>Reference median</th><th>Median difference</th></tr></thead>
-    <tbody>{% for row in analysis.genes %}<tr><td>{{ row.gene }}</td><td>{{ row.disease_samples }}</td><td>{{ row.reference_samples }}</td><td>{{ row.disease_median }}</td><td>{{ row.reference_median }}</td><td>{{ row.median_difference }}</td></tr>{% else %}<tr><td colspan="6">No comparable Xena measurements were available.</td></tr>{% endfor %}</tbody></table>
+    <table><thead><tr><th>Gene</th><th>Disease donors</th><th>Reference donors</th><th>Disease median (IQR)</th><th>Reference median (IQR)</th><th>Median difference (95% bootstrap CI)</th></tr></thead>
+    <tbody>{% for row in analysis.genes %}<tr><td>{{ row.gene }}</td><td>{{ row.disease_donors }}</td><td>{{ row.reference_donors }}</td><td>{{ row.disease_median }} ({{ row.disease_q1 }}–{{ row.disease_q3 }})</td><td>{{ row.reference_median }} ({{ row.reference_q1 }}–{{ row.reference_q3 }})</td><td>{{ row.median_difference }} ({{ row.ci_lower }}, {{ row.ci_upper }})</td></tr>{% else %}<tr><td colspan="6">No comparable Xena measurements were available.</td></tr>{% endfor %}</tbody></table>
   </div>
   {% endfor %}
   {% else %}<p>No expression retrieval was requested.</p>{% endif %}

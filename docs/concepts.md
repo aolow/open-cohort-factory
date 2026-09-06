@@ -24,6 +24,14 @@ These labels describe provenance. They do not guarantee molecular comparability.
 If a public dataset lacks comorbidity, medication, smoking, or other exposure metadata, the software
 reports the field as unknown. It must not infer that an unrecorded condition or exposure was absent.
 
+Missingness can itself have structure. Race, ethnicity, procurement timing, RNA integrity, death
+classification, and pathology may be available in one source but absent in another. In that case,
+the covariate is confounded with source at the design level. Restricting to complete cases or adding
+the field to a regression model cannot recover information that was never collected in one arm.
+The report also labels covariate roles. Post-baseline outcomes such as vital status should not be
+treated interchangeably with baseline adjustment variables, because conditioning on an outcome of
+disease or treatment can introduce rather than remove bias.
+
 ## Donor-aware analysis
 
 Multiple samples may come from one donor, and single-cell datasets contain many cells per donor.
@@ -53,3 +61,11 @@ When tumor and adjacent non-tumor tissue come from the same participant, the par
 takes precedence over demographic matching. This controls participant-level differences but does
 not make adjacent tissue healthy: field effects, occult alteration, and cancer-associated systemic
 effects remain plausible.
+
+## Uncertainty follows the donor design
+
+Expression summaries use donor medians so multiple biospecimens do not become independent people.
+The report calculates deterministic 95% bootstrap intervals by resampling donors for unmatched
+contrasts and resampling complete donor pairs together for demographic matches and within-participant
+tumor/adjacent comparisons. These intervals describe sampling uncertainty in the assembled public
+cohorts; they do not account for every unmeasured biological or technical source effect.

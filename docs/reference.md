@@ -71,3 +71,10 @@ records the dataset, genes, requested and returned sample counts, source-specifi
 scale, output transform, retrieval time, reference build, and annotation version. Matched summaries
 retain only pairs for which both donors have Xena measurements and use donor medians when a donor
 has multiple samples.
+
+`summary.json` and `report.html` also include a donor-level covariate landscape. For each population,
+it reports availability and observed patterns for age, sex, race, ethnicity, vital status, assay,
+ischemic time, RIN, death classification, and specimen pathology. Sentinel values such as `unknown`
+and `not reported` are treated as missing. A field with sharply different availability across panels
+is marked `source_confounded`; this is a design warning rather than an invitation to impute unsupported
+values.

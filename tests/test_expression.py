@@ -25,6 +25,8 @@ def test_expression_reports_unmatched_and_donor_matched_results():
     assert result["comparisons"][0]["genes"][0]["median_difference"] == 5.0
     assert result["comparisons"][1]["genes"][0]["median_difference"] == 6.0
     assert result["comparisons"][1]["complete_expression_pairs"] == 1
+    assert result["comparisons"][0]["genes"][0]["ci_lower"] <= 5.0
+    assert result["comparisons"][0]["genes"][0]["ci_upper"] >= 5.0
     positions = result["sensitivity_chart"]["genes"][0]["estimates"]
     assert all(0 <= estimate["position"] <= 100 for estimate in positions)
 

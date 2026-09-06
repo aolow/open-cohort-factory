@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import statistics
 from collections import Counter
 from typing import Any
 
@@ -52,6 +53,7 @@ def summarize(samples: list[SampleRecord], spec: ProjectSpec) -> dict[str, Any]:
             samples, minimum_reference_donors=spec.comparability.minimum_donors_per_group
         ),
         "cell_type_summaries": _cell_type_summaries(samples),
+        "covariate_landscape": _covariate_landscape(samples),
         "reference_panels": [
             {
                 "name": panel.name,
@@ -68,6 +70,124 @@ def summarize(samples: list[SampleRecord], spec: ProjectSpec) -> dict[str, Any]:
             for panel in spec.reference_panels
         ],
     }
+
+
+COVARIATES = [
+    ("age_bracket", "Age bracket", "categorical", "demographic"),
+    ("sex_at_birth", "Sex at birth", "categorical", "demographic"),
+    ("race", "Race", "categorical", "social-demographic proxy"),
+    ("ethnicity", "Ethnicity", "categorical", "social-demographic proxy"),
+    ("vital_status", "Vital status", "categorical", "post-baseline outcome"),
+    ("assay_type", "Assay type", "categorical", "technical"),
+    ("ischemic_time_minutes", "Ischemic time", "numeric", "procurement"),
+    ("rin", "RNA integrity (RIN)", "numeric", "specimen quality"),
+    ("hardy_scale", "Death classification", "categorical", "procurement"),
+    ("pathology_notes", "Specimen pathology", "categorical", "specimen condition"),
+]
+
+
+def _known_covariate(value: Any) -> bool:
+    if value is None or value == "":
+        return False
+    if isinstance(value, str):
+        return value.strip().casefold() not in {
+            "unknown",
+            "not reported",
+            "not available",
+            "not specified",
+        }
+    return True
+
+
+def _covariate_landscape(samples: list[SampleRecord]) -> dict[str, Any]:
+    populations = sorted({(sample.cohort_role, sample.cohort_name) for sample in samples})
+    donor_groups: dict[str, list[SampleRecord]] = {}
+    for role, name in populations:
+        members = [
+            sample for sample in samples if (sample.cohort_role, sample.cohort_name) == (role, name)
+        ]
+        donor_groups[name] = list({sample.case_id: sample for sample in members}.values())
+
+    fields: list[dict[str, Any]] = []
+    for field, label, kind, covariate_role in COVARIATES:
+        coverage = []
+        known_rates = []
+        category_distributions: list[dict[str, float]] = []
+        for population, donors in donor_groups.items():
+            values = [getattr(donor, field) for donor in donors]
+            known = [value for value in values if _known_covariate(value)]
+            rate = len(known) / len(donors) if donors else 0.0
+            known_rates.append(rate)
+            detail: dict[str, Any] = {}
+            if known and kind == "numeric":
+                numeric = [float(value) for value in known]
+                detail = {
+                    "median": round(statistics.median(numeric), 2),
+                    "minimum": round(min(numeric), 2),
+                    "maximum": round(max(numeric), 2),
+                }
+            elif known:
+                counts = Counter(str(value) for value in known)
+                if len(known) >= 5:
+                    category_distributions.append(
+                        {category: count / len(known) for category, count in counts.items()}
+                    )
+                detail = {
+                    "top_values": [
+                        {"value": str(value), "donors": count}
+                        for value, count in counts.most_common(3)
+                    ]
+                }
+            coverage.append(
+                {
+                    "population": population,
+                    "known": len(known),
+                    "total": len(donors),
+                    "percent": round(rate * 100),
+                    "detail": detail,
+                }
+            )
+        spread = max(known_rates, default=0) - min(known_rates, default=0)
+        distribution_distance = _maximum_distribution_distance(category_distributions)
+        if max(known_rates, default=0) == 0:
+            availability_status = "unavailable"
+        elif spread >= 0.5 and max(known_rates, default=0) >= 0.5:
+            availability_status = "source_confounded"
+        else:
+            availability_status = "partially_comparable"
+        fields.append(
+            {
+                "field": field,
+                "label": label,
+                "kind": kind,
+                "role": covariate_role,
+                "coverage": coverage,
+                "source_confounded_availability": (
+                    spread >= 0.5 and max(known_rates, default=0) >= 0.5
+                ),
+                "availability_status": availability_status,
+                "distribution_shift": distribution_distance >= 0.2,
+                "maximum_distribution_distance": round(distribution_distance, 3),
+            }
+        )
+    return {
+        "populations": list(donor_groups),
+        "fields": fields,
+        "interpretation": (
+            "A covariate measured primarily in one source is structurally confounded with source; "
+            "missingness cannot be repaired by ordinary adjustment."
+        ),
+    }
+
+
+def _maximum_distribution_distance(distributions: list[dict[str, float]]) -> float:
+    maximum = 0.0
+    for index, left in enumerate(distributions):
+        for right in distributions[index + 1 :]:
+            categories = left.keys() | right.keys()
+            distance = 0.5 * sum(abs(left.get(key, 0) - right.get(key, 0)) for key in categories)
+            maximum = max(maximum, distance)
+    return maximum
 
 
 def methodological_warnings(spec: ProjectSpec, samples: list[SampleRecord]) -> list[str]:

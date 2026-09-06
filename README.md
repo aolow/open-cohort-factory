@@ -42,6 +42,10 @@ the local documentation site with `uv run mkdocs serve`.
 - `matched_donors.tsv`: analysis-ready table of deterministic donor pairs
 - `expression.tsv`: requested Xena measurements only; never the full expression atlas
 
+The HTML report includes a cross-population covariate-availability matrix, source-confounding
+warnings, expression distributions, and deterministic 95% bootstrap intervals. Matched and
+within-participant analyses resample donor pairs together.
+
 ## Reference contexts
 
 The canonical model uses precise acquisition labels:
@@ -65,6 +69,7 @@ comorbidity, or exposure.
 - Results remain stratified by source unless an explicit, documented harmonization method is used.
 - Every build records its source query, retrieval time, citations, and known metadata gaps.
 - Exact matching is performed at the donor level and never silently drops unmatched donors.
+- Values such as `unknown` and `not reported` count as missing, not as observed categories.
 
 ## Roadmap
 
