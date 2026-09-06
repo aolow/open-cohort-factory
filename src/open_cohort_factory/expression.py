@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import statistics
 from collections import defaultdict
 from typing import Any
@@ -66,7 +67,43 @@ def summarize_expression(
         comparison["complete_expression_pairs"] = len(complete_pairs)
         if comparison["genes"]:
             analyses.append(comparison)
-    return {"scale": "log2(TPM + 1)", "comparisons": analyses}
+    return {
+        "scale": "log2(TPM + 1)",
+        "comparisons": analyses,
+        "sensitivity_chart": _sensitivity_chart(analyses),
+    }
+
+
+def _sensitivity_chart(analyses: list[dict[str, Any]]) -> dict[str, Any]:
+    values = [
+        abs(row["median_difference"])
+        for analysis in analyses
+        for row in analysis["genes"]
+    ]
+    limit = max(1, math.ceil(max(values, default=1)))
+    genes = sorted(
+        {row["gene"] for analysis in analyses for row in analysis["genes"]}
+    )
+    return {
+        "minimum": -limit,
+        "maximum": limit,
+        "genes": [
+            {
+                "gene": gene,
+                "estimates": [
+                    {
+                        "comparison": analysis["name"],
+                        "value": row["median_difference"],
+                        "position": round(50 + row["median_difference"] / (2 * limit) * 100, 2),
+                    }
+                    for analysis in analyses
+                    for row in analysis["genes"]
+                    if row["gene"] == gene
+                ],
+            }
+            for gene in genes
+        ],
+    }
 
 
 def _comparison(name: str, rows: list[dict[str, Any]]) -> dict[str, Any]:

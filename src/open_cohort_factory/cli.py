@@ -69,6 +69,14 @@ def build(
             )
         provenance.append(expression_provenance)
         expression_summary = summarize_expression(expression_rows, matching)
+        expression_summary["coverage"] = {
+            key: expression_provenance.query[key]
+            for key in (
+                "requested_sample_count",
+                "returned_sample_count",
+                "returned_samples_by_source",
+            )
+        }
     warnings = methodological_warnings(project, samples)
     result = BuildResult(
         specification=project, samples=samples, provenance=provenance, warnings=warnings

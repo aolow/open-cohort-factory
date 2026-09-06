@@ -18,7 +18,7 @@ TEMPLATE = """<!doctype html>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ result.specification.name }} cohort report</title>
   <style>
-    :root { color-scheme: light; --ink:#14213d; --muted:#5f6b7a; --line:#dbe3ea; --bg:#f6f8fb; --accent:#137c8b; }
+    :root { color-scheme: light; --ink:#14213d; --muted:#5f6b7a; --line:#dbe3ea; --bg:#f6f8fb; --accent:#137c8b; --tumor:#c84b61; --gtex:#2878b5; --adjacent:#8b5fbf; --cell:#2a9d78; }
     body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 system-ui,-apple-system,sans-serif; }
     main { max-width:1040px; margin:0 auto; padding:48px 24px 80px; }
     h1 { font-size:2.2rem; margin:0 0 8px; } h2 { margin-top:40px; }
@@ -31,6 +31,25 @@ TEMPLATE = """<!doctype html>
     th,td { border:1px solid var(--line); padding:10px 12px; text-align:left; }
     th { background:#e8f1f3; } code { background:#e9edf2; padding:2px 5px; border-radius:4px; }
     .warning { border-left:4px solid #d97706; padding:8px 14px; margin:10px 0; background:#fffaf0; }
+    .flow { display:grid; grid-template-columns:1fr auto 1fr auto minmax(240px,1.35fr); align-items:center; gap:12px; margin:28px 0; }
+    .flow-node { background:white; border:1px solid var(--line); border-top:5px solid var(--accent); border-radius:12px; padding:16px; min-height:78px; }
+    .flow-node strong { display:block; font-size:1.55rem; } .arrow { color:var(--muted); font-size:1.5rem; }
+    .branches { display:grid; gap:9px; }.branch { background:white; border:1px solid var(--line); border-left:5px solid var(--gtex); border-radius:8px; padding:9px 12px; }
+    .branch:nth-child(2) { border-left-color:var(--adjacent); }
+    .context-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:12px; margin:18px 0; }
+    .context { background:white; border:1px solid var(--line); border-radius:12px; padding:15px; }
+    .context .kind { display:inline-block; color:white; background:var(--gtex); border-radius:999px; padding:3px 9px; font-size:.78rem; font-weight:700; }
+    .context:nth-child(2) .kind { background:var(--adjacent); }.context:nth-child(3) .kind { background:var(--cell); }
+    .sensitivity { background:white; border:1px solid var(--line); border-radius:12px; padding:20px; margin:18px 0 28px; }
+    .axis { display:flex; justify-content:space-between; color:var(--muted); font-size:.8rem; margin:0 0 12px 170px; }
+    .gene-plot { display:grid; grid-template-columns:155px 1fr; gap:14px; margin:18px 0; align-items:start; }
+    .gene-label { font-weight:750; padding-top:3px; }.estimate-list { border-left:1px solid var(--line); border-right:1px solid var(--line); }
+    .estimate { display:grid; grid-template-columns:minmax(190px,1.2fr) minmax(180px,2fr) 62px; gap:10px; align-items:center; min-height:32px; font-size:.82rem; }
+    .track { height:18px; position:relative; background:linear-gradient(to right,transparent 49.7%,var(--ink) 49.7%,var(--ink) 50.3%,transparent 50.3%); }
+    .dot { position:absolute; top:4px; width:10px; height:10px; border-radius:50%; background:var(--gtex); transform:translateX(-50%); }
+    .estimate:nth-child(2) .dot { background:#4d9acb; }.estimate:nth-child(3) .dot { background:var(--adjacent); }.estimate:nth-child(4) .dot { background:#b07bd3; }
+    .value { text-align:right; font-variant-numeric:tabular-nums; font-weight:650; }
+    @media (max-width:720px) { .flow { grid-template-columns:1fr; }.arrow { transform:rotate(90deg); text-align:center; }.axis { margin-left:0; }.gene-plot { grid-template-columns:1fr; }.estimate { grid-template-columns:1fr; gap:2px; padding:5px 0; } }
   </style>
 </head>
 <body><main>
@@ -42,7 +61,22 @@ TEMPLATE = """<!doctype html>
     <div class="card"><div class="metric">{{ summary.age.mean if summary.age.mean is not none else "—" }}</div><div class="label">disease-cohort mean age</div></div>
     <div class="card"><div class="metric">{{ summary.reference_panels|length }}</div><div class="label">declared reference panels</div></div>
   </div>
+  {% if summary.expression is defined %}
+  <h2>Analysis flow</h2>
+  <div class="flow" aria-label="Expression cohort attrition">
+    <div class="flow-node"><strong>{{ summary.expression.coverage.requested_sample_count }}</strong><span class="label">eligible cohort identifiers requested</span></div>
+    <div class="arrow">→</div>
+    <div class="flow-node"><strong>{{ summary.expression.coverage.returned_sample_count }}</strong><span class="label">samples represented in Xena Toil</span></div>
+    <div class="arrow">→</div>
+    <div class="branches">
+      {% for analysis in summary.expression.comparisons %}{% if analysis.complete_expression_pairs is defined %}<div class="branch"><strong>{{ analysis.complete_expression_pairs }} pairs</strong> · demographic match with expression</div>{% endif %}{% if analysis.within_donor_pairs is defined %}<div class="branch"><strong>{{ analysis.within_donor_pairs }} pairs</strong> · within-participant tumor/adjacent</div>{% endif %}{% endfor %}
+    </div>
+  </div>
+  {% endif %}
   <h2>Reference panels</h2>
+  <div class="context-grid">
+  {% for panel in summary.reference_panels %}<div class="context"><span class="kind">{{ panel.context|replace("_", " ") }}</span><h3>{{ panel.name }}</h3><p>{{ panel.source }} · {{ panel.resolution }} · {{ panel.tissue }}</p></div>{% endfor %}
+  </div>
   <table><thead><tr><th>Name</th><th>Source</th><th>Tissue</th><th>Context</th><th>Resolution</th><th>Status</th></tr></thead>
   <tbody>{% for panel in summary.reference_panels %}<tr><td>{{ panel.name }}</td><td>{{ panel.source }}</td><td>{{ panel.tissue }}</td><td><code>{{ panel.context }}</code></td><td>{{ panel.resolution }}</td><td>{{ panel.status }}</td></tr>{% endfor %}</tbody></table>
   <h2>Population comparison</h2>
@@ -76,6 +110,13 @@ TEMPLATE = """<!doctype html>
   <h2>Expression comparison</h2>
   {% if summary.expression is defined %}
   <p>Values are cohort-restricted UCSC Xena Toil measurements on the {{ summary.expression.scale }} scale. Differences are descriptive and do not imply causal or universally healthy reference populations.</p>
+  <div class="sensitivity" role="img" aria-label="Median tumor minus reference expression differences across reference definitions">
+    <h3>How the reference definition changes the signal</h3>
+    <div class="axis"><span>{{ summary.expression.sensitivity_chart.minimum }}</span><span>tumor − reference median difference</span><span>+{{ summary.expression.sensitivity_chart.maximum }}</span></div>
+    {% for gene in summary.expression.sensitivity_chart.genes %}<div class="gene-plot"><div class="gene-label">{{ gene.gene }}</div><div class="estimate-list">
+      {% for estimate in gene.estimates %}<div class="estimate"><span>{{ estimate.comparison }}</span><div class="track"><span class="dot" style="left:{{ estimate.position }}%"></span></div><span class="value">{{ estimate.value }}</span></div>{% endfor %}
+    </div></div>{% endfor %}
+  </div>
   {% for analysis in summary.expression.comparisons %}
   <div class="card"><h3>{{ analysis.name }}</h3>
     {% if analysis.complete_expression_pairs is defined %}<p><strong>{{ analysis.complete_expression_pairs }}</strong> matched pairs had expression available for both donors.</p>{% endif %}
