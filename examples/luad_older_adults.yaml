@@ -1,0 +1,42 @@
+name: Older adults with lung adenocarcinoma
+description: >-
+  A reproducible public-data cohort with explicitly characterized lung reference panels.
+
+disease_cohort:
+  source: gdc
+  projects:
+    - TCGA-LUAD
+  age:
+    minimum: 60
+  sample_types:
+    - Primary Tumor
+
+reference_panels:
+  - name: GTEx lung older-adult reference
+    source: gtex
+    tissue: Lung
+    context: postmortem_reference
+    age:
+      minimum: 60
+      maximum: 70
+    resolution: bulk
+    notes: Postmortem reference tissue; not assumed to be universally healthy.
+
+  - name: Tabula Sapiens lung cellular reference
+    source: tabula_sapiens
+    tissue: lung
+    context: organ_donor
+    age:
+      minimum: 60
+    resolution: cell_type
+    notes: Organ-donor tissue with donor-level medical context retained where available.
+
+comparability:
+  stratify_by:
+    - age_group
+    - sex_at_birth
+    - source
+  minimum_donors_per_group: 5
+  preserve_source_effects: true
+  missing_metadata: report
+
