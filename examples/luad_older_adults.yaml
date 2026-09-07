@@ -68,3 +68,5 @@ expression:
     - MSLN
   dataset: TcgaTargetGtex_rsem_gene_tpm
   transform: log2_tpm_plus_1
+  gtex_pan_tissue: true
+  normal_tissue_tpm_threshold: 1.0

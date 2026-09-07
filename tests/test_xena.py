@@ -66,3 +66,33 @@ def test_fetch_fails_when_only_non_bulk_reference_samples_exist():
         XenaClient(client=httpx.Client(transport=httpx.MockTransport(lambda request: None))).fetch(
             [tabula], ExpressionSpec(genes=["EPCAM"])
         )
+
+
+def test_pan_tissue_fetch_decodes_and_selects_only_gtex_normal_tissue():
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = request.content.decode()
+        if 'field.name "sampleID"' in body:
+            payload = ["GTEX-AAAA-0001-SM-X", "TCGA-AA-0001-01"]
+        elif "group_concat" in body:
+            primary = [""] * 16
+            primary[15] = "Lung"
+            sample_type = [""] * 10
+            sample_type[9] = "Normal Tissue"
+            payload = [
+                {"name": "_study", "code": "TCGA\tTARGET\tGTEX"},
+                {"name": "_primary_site", "code": "\t".join(primary)},
+                {"name": "_sample_type", "code": "\t".join(sample_type)},
+            ]
+        elif "TcgaTargetGTEX_phenotype.txt" in body:
+            payload = [None, [[2, 0], [15, 15], [9, 0]]]
+        else:
+            payload = [{"gene": "EPCAM", "position": [], "scores": [[5.0]]}]
+        return httpx.Response(200, json=payload, request=request)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    rows, provenance = XenaClient(client=client).fetch_gtex_atlas(
+        ExpressionSpec(genes=["EPCAM"], gtex_pan_tissue=True)
+    )
+    assert len(rows) == 1
+    assert rows[0]["tissue"] == "Lung"
+    assert provenance["eligible_gtex_samples"] == 1

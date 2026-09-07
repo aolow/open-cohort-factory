@@ -60,6 +60,10 @@ TEMPLATE = """<!doctype html>
     .status { font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
     .status-supported { color:#18724e; }.status-caution { color:#a05a00; }.status-limited { color:#b4233b; }.status-not_evaluable { color:var(--muted); }
     .use-columns { display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:.86rem; }.use-columns ul { padding-left:18px; }
+    .safety-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:16px; margin:18px 0; }
+    .safety-card { background:white; border:1px solid var(--line); border-radius:12px; padding:17px; }
+    .tissue-row { display:grid; grid-template-columns:105px 1fr 42px; gap:8px; align-items:center; margin:7px 0; font-size:.8rem; }
+    .tissue-track { background:#edf1f5; height:9px; border-radius:6px; overflow:hidden; }.tissue-fill { display:block; height:100%; background:var(--gtex); }
     @media (max-width:720px) { .flow { grid-template-columns:1fr; }.arrow { transform:rotate(90deg); text-align:center; }.axis { margin-left:0; }.gene-plot { grid-template-columns:1fr; }.estimate { grid-template-columns:1fr; gap:2px; padding:5px 0; } }
   </style>
 </head>
@@ -147,6 +151,13 @@ TEMPLATE = """<!doctype html>
     <tbody>{% for row in analysis.genes %}<tr><td>{{ row.gene }}</td><td>{{ row.disease_donors }}</td><td>{{ row.reference_donors }}</td><td>{{ row.disease_median }} ({{ row.disease_q1 }}–{{ row.disease_q3 }})</td><td>{{ row.reference_median }} ({{ row.reference_q1 }}–{{ row.reference_q3 }})</td><td>{{ row.median_difference }} ({{ row.ci_lower }}, {{ row.ci_upper }})</td></tr>{% else %}<tr><td colspan="6">No comparable Xena measurements were available.</td></tr>{% endfor %}</tbody></table>
   </div>
   {% endfor %}
+  {% if summary.expression.pan_tissue is defined %}
+  <h2>Pan-tissue normal expression</h2>
+  <p>GTEx tissues are ranked independently for each gene. Bars show median {{ summary.expression.pan_tissue.scale }} relative to that gene's highest-expression tissue; prevalence uses TPM ≥ {{ summary.expression.pan_tissue.tpm_threshold }}.</p>
+  <div class="safety-grid">{% for gene in summary.expression.pan_tissue.genes %}<section class="safety-card"><h3>{{ gene.gene }}</h3><p><strong>{{ gene.tissues_with_majority_above_threshold }}</strong> tissues have at least half of donors above the configured threshold.</p>
+    {% for tissue in gene.top_tissues %}<div class="tissue-row"><span>{{ tissue.tissue }}</span><div class="tissue-track"><span class="tissue-fill" style="width:{{ tissue.chart_percent }}%"></span></div><span>{{ tissue.median }}</span></div>{% endfor %}
+  </section>{% endfor %}</div>
+  {% endif %}
   {% else %}<p>No expression retrieval was requested.</p>{% endif %}
   <h2>Single-cell reference context</h2>
   {% for panel in summary.cell_type_summaries %}
@@ -181,7 +192,10 @@ def write_outputs(
     expression_rows = expression_rows or []
     if expression_rows:
         with (output_dir / "expression.tsv").open("w", encoding="utf-8", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=list(expression_rows[0]), delimiter="\t")
+            fieldnames = list(
+                dict.fromkeys(key for row in expression_rows for key in row)
+            )
+            writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter="\t")
             writer.writeheader()
             writer.writerows(expression_rows)
     matching = summary.get("matching", [])

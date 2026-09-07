@@ -1,4 +1,4 @@
-from open_cohort_factory.expression import summarize_expression
+from open_cohort_factory.expression import summarize_expression, summarize_pan_tissue
 
 
 def test_expression_reports_unmatched_and_donor_matched_results():
@@ -44,3 +44,16 @@ def test_adjacent_reference_adds_within_donor_comparison():
     within = result["comparisons"][1]
     assert within["within_donor_pairs"] == 1
     assert within["genes"][0]["median_difference"] == 3.0
+
+
+def test_pan_tissue_summary_is_donor_aware_and_ranked():
+    rows = [
+        {"gene": "G", "tissue": "Lung", "donor_id": "d1", "log2_tpm": 2.0},
+        {"gene": "G", "tissue": "Lung", "donor_id": "d1", "log2_tpm": 4.0},
+        {"gene": "G", "tissue": "Liver", "donor_id": "d2", "log2_tpm": 5.0},
+    ]
+    result = summarize_pan_tissue(rows, tpm_threshold=1.0)
+    gene = result["genes"][0]
+    assert gene["top_tissues"][0]["tissue"] == "Liver"
+    assert gene["tissues"][1]["median"] == 3.0
+    assert gene["tissues_with_majority_above_threshold"] == 2

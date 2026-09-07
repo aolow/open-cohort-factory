@@ -50,6 +50,10 @@ Each reference panel also receives a multi-dimensional fitness assessment coveri
 support, demographic alignment, acquisition, design linkage, measurement overlap, and baseline
 metadata. The tool deliberately does not collapse these dimensions into a single score.
 
+Optional pan-tissue mode profiles requested genes across every GTEx primary tissue represented in
+the Xena Toil compendium. It reports donor-level medians, dispersion, and prevalence above a declared
+TPM threshold so tissue-specific enrichment is not mistaken for whole-body selectivity.
+
 ## Reference contexts
 
 The canonical model uses precise acquisition labels:

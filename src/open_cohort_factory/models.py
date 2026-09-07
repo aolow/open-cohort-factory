@@ -99,6 +99,8 @@ class ExpressionSpec(BaseModel):
     genes: list[str] = Field(min_length=1)
     dataset: str = "TcgaTargetGtex_rsem_gene_tpm"
     transform: Literal["log2_tpm_plus_1"] = "log2_tpm_plus_1"
+    gtex_pan_tissue: bool = False
+    normal_tissue_tpm_threshold: float = Field(default=1.0, ge=0)
 
 
 class ProjectSpec(BaseModel):

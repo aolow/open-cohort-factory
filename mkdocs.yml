@@ -14,6 +14,7 @@ nav:
   - Overview: index.md
   - Installation: installation.md
   - Concepts: concepts.md
+  - Methodology roadmap: methodology-roadmap.md
   - Vignettes:
       - Older adults with lung adenocarcinoma: vignettes/luad-older-adults.md
   - Command reference: reference.md
@@ -28,4 +29,3 @@ markdown_extensions:
       permalink: true
 
 strict: true
-

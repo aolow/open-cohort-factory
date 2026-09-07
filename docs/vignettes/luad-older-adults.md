@@ -213,6 +213,22 @@ analysis; matched GTEx is useful for adult tissue-expression context with procur
 Tabula Sapiens is useful for cell-type attribution but not as a bulk-expression or population-level
 counterfactual. None supports an unqualified claim about expression in a universally healthy person.
 
+## Screen expression beyond the tissue of origin
+
+The pan-tissue option queried 7,425 GTEx samples across 30 primary-tissue groups in the verified
+Toil run. At a threshold of 1 TPM, at least half of donors were positive in 7 tissues for CEACAM5,
+21 tissues for EPCAM, and 7 tissues for MSLN.
+
+The highest normal-tissue signals materially change interpretation. CEACAM5 was highest in vagina,
+colon, small intestine, and salivary gland; EPCAM was broadly expressed, led by small intestine,
+thyroid, pituitary, and salivary gland; MSLN was highest in lung, followed by fallopian tube and
+salivary gland. The five-donor fallopian-tube estimate is displayed with its donor count rather than
+given the same evidentiary weight as tissues represented by hundreds of donors.
+
+This screen is an expression-context flag, not a toxicity prediction. Bulk RNA does not establish
+protein abundance, accessibility, essentiality, or the cell type carrying the signal; those questions
+motivate the next cell-type-attribution phase.
+
 ## Add cellular context without inflating the evidence
 
 The same build queries the tissue-specific Tabula Sapiens lung dataset through CELLxGENE Census.

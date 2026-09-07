@@ -84,3 +84,18 @@ population support, demographic alignment, acquisition alignment, design linkage
 overlap, and baseline metadata. Each dimension is labeled `supported`, `caution`, `limited`, or
 `not_evaluable`, with the underlying evidence retained. Recommended and unsupported uses are emitted
 as explicit lists; there is intentionally no total score or winner.
+
+Set `gtex_pan_tissue: true` inside `expression` to add a normal-tissue safety screen:
+
+```yaml
+expression:
+  source: xena_toil
+  genes: [EPCAM, CEACAM5, MSLN]
+  gtex_pan_tissue: true
+  normal_tissue_tpm_threshold: 1.0
+```
+
+The connector decodes Xena phenotype fields, selects GTEx `Normal Tissue` samples, aggregates
+multiple samples to donor × primary-tissue medians, and ranks tissues separately for each gene.
+The threshold is evaluated in TPM after conversion to `log2(TPM + 1)`. Atlas sample and tissue
+coverage are recorded in the Xena provenance query.

@@ -9,7 +9,7 @@ from rich.table import Table
 
 from .audit import methodological_warnings, summarize
 from .config import load_spec
-from .expression import summarize_expression
+from .expression import summarize_expression, summarize_pan_tissue
 from .matching import exact_match
 from .models import BuildResult
 from .reference_fitness import assess_reference_fitness
@@ -78,6 +78,14 @@ def build(
                 "returned_samples_by_source",
             )
         }
+        if project.expression.gtex_pan_tissue:
+            with console.status("Profiling selected genes across GTEx tissues in Xena..."):
+                atlas_rows, atlas_provenance = XenaClient().fetch_gtex_atlas(project.expression)
+            expression_rows.extend(atlas_rows)
+            expression_summary["pan_tissue"] = summarize_pan_tissue(
+                atlas_rows, project.expression.normal_tissue_tpm_threshold
+            )
+            expression_provenance.query["gtex_pan_tissue"] = atlas_provenance
     warnings = methodological_warnings(project, samples)
     result = BuildResult(
         specification=project, samples=samples, provenance=provenance, warnings=warnings

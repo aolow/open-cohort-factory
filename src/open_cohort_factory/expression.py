@@ -86,6 +86,60 @@ def summarize_expression(
     }
 
 
+def summarize_pan_tissue(
+    rows: list[dict[str, Any]], tpm_threshold: float
+) -> dict[str, Any]:
+    """Create donor-aware normal-tissue safety summaries for each requested gene."""
+    log_threshold = math.log2(tpm_threshold + 1)
+    donor_values: defaultdict[tuple[str, str, str], list[float]] = defaultdict(list)
+    for row in rows:
+        donor_values[(row["gene"], row["tissue"], row["donor_id"])].append(row["log2_tpm"])
+    grouped: defaultdict[tuple[str, str], list[float]] = defaultdict(list)
+    for (gene, tissue, _), values in donor_values.items():
+        grouped[(gene, tissue)].append(statistics.median(values))
+
+    gene_summaries = []
+    for gene in sorted({gene for gene, _ in grouped}):
+        tissues: list[dict[str, Any]] = []
+        for row_gene, tissue in sorted(grouped):
+            if row_gene != gene:
+                continue
+            values = grouped[(gene, tissue)]
+            tissues.append(
+                {
+                    "tissue": tissue,
+                    "donors": len(values),
+                    "median": round(statistics.median(values), 4),
+                    "q1": round(_percentile(values, 0.25), 4),
+                    "q3": round(_percentile(values, 0.75), 4),
+                    "fraction_above_threshold": round(
+                        sum(value >= log_threshold for value in values) / len(values), 3
+                    ),
+                }
+            )
+        ranked = sorted(tissues, key=lambda item: item["median"], reverse=True)
+        maximum = max((item["median"] for item in ranked), default=1) or 1
+        top_tissues = [
+            {**item, "chart_percent": round(item["median"] / maximum * 100, 2)}
+            for item in ranked[:10]
+        ]
+        gene_summaries.append(
+            {
+                "gene": gene,
+                "tissues": ranked,
+                "top_tissues": top_tissues,
+                "tissues_with_majority_above_threshold": sum(
+                    item["fraction_above_threshold"] >= 0.5 for item in ranked
+                ),
+            }
+        )
+    return {
+        "scale": "log2(TPM + 1)",
+        "tpm_threshold": tpm_threshold,
+        "genes": gene_summaries,
+    }
+
+
 def _sensitivity_chart(analyses: list[dict[str, Any]]) -> dict[str, Any]:
     values = [
         max(abs(row["median_difference"]), abs(row["ci_lower"]), abs(row["ci_upper"]))
