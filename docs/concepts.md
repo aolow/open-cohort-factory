@@ -69,3 +69,12 @@ The report calculates deterministic 95% bootstrap intervals by resampling donors
 contrasts and resampling complete donor pairs together for demographic matches and within-participant
 tumor/adjacent comparisons. These intervals describe sampling uncertainty in the assembled public
 cohorts; they do not account for every unmeasured biological or technical source effect.
+
+## Reference fitness is purpose-specific
+
+A reference can be strong for one question and unsuitable for another. Adjacent tissue supports a
+within-participant contrast but is exposed to the cancer setting. GTEx provides broader adult tissue
+context but differs in procurement and metadata collection. A small single-cell atlas can localize a
+signal to cell types without supporting population-level bulk inference. The report therefore shows
+fitness dimensions and appropriate/unsupported uses separately. It does not compute a composite
+score, because donor count cannot compensate for incompatible acquisition or missing covariates.

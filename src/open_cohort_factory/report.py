@@ -54,6 +54,12 @@ TEMPLATE = """<!doctype html>
     .covariate-note { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px; margin:14px 0; }
     .covariate-note > div { border-left:4px solid #d97706; background:#fffaf0; padding:10px 13px; }
     .ci { position:absolute; top:8px; height:2px; background:var(--ink); opacity:.55; }
+    .fitness-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(285px,1fr)); gap:16px; margin:18px 0; }
+    .fitness-panel { background:white; border:1px solid var(--line); border-radius:12px; padding:17px; }
+    .dimension { display:grid; grid-template-columns:115px 1fr; gap:9px; padding:9px 0; border-top:1px solid var(--line); }
+    .status { font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; }
+    .status-supported { color:#18724e; }.status-caution { color:#a05a00; }.status-limited { color:#b4233b; }.status-not_evaluable { color:var(--muted); }
+    .use-columns { display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:.86rem; }.use-columns ul { padding-left:18px; }
     @media (max-width:720px) { .flow { grid-template-columns:1fr; }.arrow { transform:rotate(90deg); text-align:center; }.axis { margin-left:0; }.gene-plot { grid-template-columns:1fr; }.estimate { grid-template-columns:1fr; gap:2px; padding:5px 0; } }
   </style>
 </head>
@@ -92,6 +98,12 @@ TEMPLATE = """<!doctype html>
   <table><thead><tr><th>Covariate</th>{% for population in summary.covariate_landscape.populations %}<th>{{ population }}</th>{% endfor %}<th>Assessment</th></tr></thead>
   <tbody>{% for field in summary.covariate_landscape.fields %}<tr><td><strong>{{ field.label }}</strong><br><small>{{ field.role }}</small></td>{% for item in field.coverage %}<td class="availability"><strong>{{ item.percent }}%</strong> known<div class="coverage-bar"><span class="coverage-fill" style="width:{{ item.percent }}%"></span></div>{% if item.detail.median is defined %}<small>median {{ item.detail.median }}; {{ item.detail.minimum }}–{{ item.detail.maximum }}</small>{% elif item.detail.top_values is defined %}<small>{% for value in item.detail.top_values %}{{ value.value }} ({{ value.donors }}){% if not loop.last %}; {% endif %}{% endfor %}</small>{% endif %}</td>{% endfor %}<td>{% if field.availability_status == "source_confounded" %}<span class="confounded">source-confounded availability</span>{% elif field.availability_status == "unavailable" %}unavailable in all panels{% elif field.distribution_shift %}<span class="confounded">distribution differs across populations</span>{% else %}no large observed shift{% endif %}</td></tr>{% endfor %}</tbody></table>
   <div class="covariate-note">{% for field in summary.covariate_landscape.fields %}{% if field.source_confounded_availability %}<div><strong>{{ field.label }}</strong><br>Availability differs sharply across populations; adjustment may select a source-specific subset.</div>{% elif field.distribution_shift %}<div><strong>{{ field.label }}</strong><br>Observed distributions differ across sufficiently represented populations (maximum distance {{ field.maximum_distribution_distance }}).</div>{% endif %}{% endfor %}</div>
+  <h2>Reference fitness by intended use</h2>
+  <p>No composite score is calculated: strength in one dimension cannot cancel a structural limitation in another.</p>
+  <div class="fitness-grid">{% for panel in summary.reference_fitness %}<section class="fitness-panel"><h3>{{ panel.reference_panel }}</h3><p><code>{{ panel.context }}</code></p>
+    {% for item in panel.dimensions %}<div class="dimension"><div><span class="status status-{{ item.status }}">{{ item.status|replace("_", " ") }}</span><br>{{ item.dimension }}</div><div>{{ item.evidence }}</div></div>{% endfor %}
+    <div class="use-columns"><div><strong>Appropriate uses</strong><ul>{% for use in panel.recommended_uses %}<li>{{ use }}</li>{% endfor %}</ul></div><div><strong>Not supported</strong><ul>{% for use in panel.not_supported %}<li>{{ use }}</li>{% endfor %}</ul></div></div>
+  </section>{% endfor %}</div>
   <h2>Comparability assessment</h2>
   {% for comparison in summary.comparability %}
   <div class="card">

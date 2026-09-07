@@ -205,6 +205,14 @@ The practical conclusion is that matching age and sex improves the comparison wi
 fully adjusted. Procurement and specimen-quality effects remain entangled with the definition of
 the reference population and must stay visible in interpretation.
 
+## Choose a reference for a question, not in the abstract
+
+The reference-fitness panel turns the audit into a decision aid without naming one universal winner.
+In this example, adjacent TCGA lung is the natural choice for a within-participant sensitivity
+analysis; matched GTEx is useful for adult tissue-expression context with procurement caveats; and
+Tabula Sapiens is useful for cell-type attribution but not as a bulk-expression or population-level
+counterfactual. None supports an unqualified claim about expression in a universally healthy person.
+
 ## Add cellular context without inflating the evidence
 
 The same build queries the tissue-specific Tabula Sapiens lung dataset through CELLxGENE Census.

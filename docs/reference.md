@@ -78,3 +78,9 @@ ischemic time, RIN, death classification, and specimen pathology. Sentinel value
 and `not reported` are treated as missing. A field with sharply different availability across panels
 is marked `source_confounded`; this is a design warning rather than an invitation to impute unsupported
 values.
+
+The `reference_fitness` output evaluates every materialized panel across six dimensions:
+population support, demographic alignment, acquisition alignment, design linkage, measurement
+overlap, and baseline metadata. Each dimension is labeled `supported`, `caution`, `limited`, or
+`not_evaluable`, with the underlying evidence retained. Recommended and unsupported uses are emitted
+as explicit lists; there is intentionally no total score or winner.

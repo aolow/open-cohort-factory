@@ -46,6 +46,10 @@ The HTML report includes a cross-population covariate-availability matrix, sourc
 warnings, expression distributions, and deterministic 95% bootstrap intervals. Matched and
 within-participant analyses resample donor pairs together.
 
+Each reference panel also receives a multi-dimensional fitness assessment covering population
+support, demographic alignment, acquisition, design linkage, measurement overlap, and baseline
+metadata. The tool deliberately does not collapse these dimensions into a single score.
+
 ## Reference contexts
 
 The canonical model uses precise acquisition labels:

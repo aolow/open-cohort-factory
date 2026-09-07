@@ -12,6 +12,7 @@ from .config import load_spec
 from .expression import summarize_expression
 from .matching import exact_match
 from .models import BuildResult
+from .reference_fitness import assess_reference_fitness
 from .report import write_outputs
 from .sources.gdc import GDCClient
 from .sources.gtex import GTExClient
@@ -85,6 +86,9 @@ def build(
     summary["matching"] = matching
     if expression_summary is not None:
         summary["expression"] = expression_summary
+    summary["reference_fitness"] = assess_reference_fitness(
+        samples, summary, matching, expression_summary
+    )
     write_outputs(result, summary, output, expression_rows)
     console.print(
         f"[green]Built[/green] {summary['sample_count']} normalized records from "
