@@ -71,3 +71,5 @@ expression:
   gtex_pan_tissue: true
   normal_tissue_tpm_threshold: 1.0
   cell_type_attribution: true
+  minimum_cell_type_donors: 3
+  minimum_cell_type_cells: 50

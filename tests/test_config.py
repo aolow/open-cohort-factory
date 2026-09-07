@@ -13,6 +13,7 @@ def test_example_spec_is_valid() -> None:
     assert spec.reference_panels[1].context == ReferenceContext.POSTMORTEM_REFERENCE
     assert spec.expression is not None and spec.expression.gtex_pan_tissue
     assert spec.expression.cell_type_attribution
+    assert spec.expression.minimum_cell_type_donors == 3
 
 
 def test_age_range_must_be_ordered() -> None:

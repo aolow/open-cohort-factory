@@ -94,6 +94,8 @@ expression:
   gtex_pan_tissue: true
   normal_tissue_tpm_threshold: 1.0
   cell_type_attribution: true
+  minimum_cell_type_donors: 3
+  minimum_cell_type_cells: 50
 ```
 
 The connector decodes Xena phenotype fields, selects GTEx `Normal Tissue` samples, aggregates
@@ -106,3 +108,7 @@ genes. Raw counts are first summarized within donor × cell type; cell types are
 donor detection fraction and median donor mean log1p count. This preserves the donor as the
 independence unit. These quantities are not TPM and must not be numerically compared with Xena bulk
 expression.
+
+Support labels and leave-one-donor-out ranges are retained in `summary.json` and
+`cell_type_attribution.tsv`. The latter also records whether the top-ranked cell type remains top
+when each donor is removed. These diagnostics are kept out of the main report flow.

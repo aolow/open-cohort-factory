@@ -122,3 +122,7 @@ def test_cell_type_expression_ranks_donor_level_detection():
     assert epithelial["donors"] == 2
     assert epithelial["cells"] == 30
     assert epithelial["median_fraction_detected"] == 0.7
+    assert epithelial["support"] == "limited"
+    assert epithelial["leave_one_donor_out_detection_min"] == 0.6
+    assert epithelial["leave_one_donor_out_detection_max"] == 0.8
+    assert result["genes"][0]["leave_one_donor_out_top_agreement"] == 1.0

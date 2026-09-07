@@ -244,6 +244,10 @@ club, and goblet epithelial cells. CEACAM5 was led by goblet and club cells. MSL
 mesothelial cells, but that estimate came from only 11 cells across two donors; the report retains
 both counts so an apparently strong signal cannot hide its limited support.
 
+Support thresholds and leave-one-donor-out stability are written to the structured outputs rather
+than expanded into another report panel. In this two-donor subset, all cellular claims remain
+`limited` under the configured three-donor minimum regardless of how many cells were sequenced.
+
 ## Add cellular context without inflating the evidence
 
 The same build queries the tissue-specific Tabula Sapiens lung dataset through CELLxGENE Census.

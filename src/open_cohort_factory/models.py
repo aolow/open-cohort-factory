@@ -102,6 +102,8 @@ class ExpressionSpec(BaseModel):
     gtex_pan_tissue: bool = False
     normal_tissue_tpm_threshold: float = Field(default=1.0, ge=0)
     cell_type_attribution: bool = False
+    minimum_cell_type_donors: int = Field(default=3, ge=1)
+    minimum_cell_type_cells: int = Field(default=50, ge=1)
 
 
 class ProjectSpec(BaseModel):

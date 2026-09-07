@@ -178,6 +178,7 @@ TEMPLATE = """<!doctype html>
     <tbody>{% for row in panel.cell_types[:20] %}<tr><td>{{ row.cell_type }}</td><td><code>{{ row.ontology_term_id }}</code></td><td>{{ row.cells }}</td><td>{{ row.donors }}</td></tr>{% endfor %}</tbody></table>
   </div>
   {% else %}<p>No single-cell reference panel has been materialized.</p>{% endfor %}
+  <details><summary><strong>Quality notes, metadata, and provenance</strong></summary>
   <h2>Interpretation guardrails</h2>
   {% for warning in result.warnings %}<div class="warning">{{ warning }}</div>{% endfor %}
   <h2>Metadata completeness</h2>
@@ -185,6 +186,7 @@ TEMPLATE = """<!doctype html>
   <tbody>{% for field,count in summary.missing_fields.items() %}<tr><td>{{ field }}</td><td>{{ count }}</td></tr>{% else %}<tr><td colspan="2">No required metadata fields are missing.</td></tr>{% endfor %}</tbody></table>
   <h2>Provenance</h2>
   {% for item in result.provenance %}<p><strong>{{ item.source.value }}</strong> — retrieved {{ item.retrieved_at }} from <a href="{{ item.citation_url }}">source documentation</a>.</p>{% endfor %}
+  </details>
 </main></body></html>"""
 
 
@@ -206,6 +208,28 @@ def write_outputs(
             writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter="\t")
             writer.writeheader()
             writer.writerows(expression_rows)
+    attribution_rows = []
+    for panel in summary.get("expression", {}).get("cell_type_attribution", []):
+        for gene in panel["genes"]:
+            for row in gene["cell_types"]:
+                attribution_rows.append(
+                    {
+                        "reference_panel": panel["reference_panel"],
+                        "gene": gene["gene"],
+                        "top_cell_type": gene["top_cell_type"],
+                        "leave_one_donor_out_top_agreement": gene[
+                            "leave_one_donor_out_top_agreement"
+                        ],
+                        **row,
+                    }
+                )
+    if attribution_rows:
+        with (output_dir / "cell_type_attribution.tsv").open(
+            "w", encoding="utf-8", newline=""
+        ) as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(attribution_rows[0]), delimiter="\t")
+            writer.writeheader()
+            writer.writerows(attribution_rows)
     matching = summary.get("matching", [])
     (output_dir / "matching.json").write_text(json.dumps(matching, indent=2), encoding="utf-8")
     with (output_dir / "matched_donors.tsv").open("w", encoding="utf-8", newline="") as handle:

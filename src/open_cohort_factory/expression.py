@@ -129,7 +129,9 @@ def summarize_pan_tissue(rows: list[dict[str, Any]], tpm_threshold: float) -> di
     }
 
 
-def summarize_cell_type_expression(rows: list[dict[str, Any]]) -> dict[str, Any]:
+def summarize_cell_type_expression(
+    rows: list[dict[str, Any]], minimum_donors: int = 3, minimum_cells: int = 50
+) -> dict[str, Any]:
     """Rank cell types using donor-level detection and expression summaries."""
     genes = []
     for gene in sorted({str(row["gene"]) for row in rows}):
@@ -139,14 +141,34 @@ def summarize_cell_type_expression(rows: list[dict[str, Any]]) -> dict[str, Any]
             typed = [row for row in gene_rows if row["cell_type"] == cell_type]
             detection = [float(row["fraction_detected"]) for row in typed]
             expression = [float(row["mean_log1p_raw_count"]) for row in typed]
+            donor_count = len({row["donor_id"] for row in typed})
+            cell_count = sum(int(row["cells"]) for row in typed)
+            leave_one_out = [
+                statistics.median(
+                    float(row["fraction_detected"]) for row in typed if row["donor_id"] != excluded
+                )
+                for excluded in {row["donor_id"] for row in typed}
+                if donor_count > 1
+            ]
             cell_types.append(
                 {
                     "cell_type": cell_type,
                     "ontology_term_id": typed[0]["cell_type_ontology_term_id"],
-                    "donors": len({row["donor_id"] for row in typed}),
-                    "cells": sum(int(row["cells"]) for row in typed),
+                    "donors": donor_count,
+                    "cells": cell_count,
                     "median_fraction_detected": round(statistics.median(detection), 3),
                     "median_mean_log1p_raw_count": round(statistics.median(expression), 4),
+                    "support": (
+                        "supported"
+                        if donor_count >= minimum_donors and cell_count >= minimum_cells
+                        else "limited"
+                    ),
+                    "leave_one_donor_out_detection_min": (
+                        round(min(leave_one_out), 3) if leave_one_out else None
+                    ),
+                    "leave_one_donor_out_detection_max": (
+                        round(max(leave_one_out), 3) if leave_one_out else None
+                    ),
                 }
             )
         ranked = sorted(
@@ -157,12 +179,46 @@ def summarize_cell_type_expression(rows: list[dict[str, Any]]) -> dict[str, Any]
             ),
             reverse=True,
         )
-        genes.append({"gene": gene, "cell_types": ranked, "top_cell_types": ranked[:8]})
+        donors = sorted({row["donor_id"] for row in gene_rows})
+        full_top = ranked[0]["cell_type"] if ranked else None
+        leave_one_out_tops = [
+            _top_cell_type([row for row in gene_rows if row["donor_id"] != donor])
+            for donor in donors
+            if len(donors) > 1
+        ]
+        genes.append(
+            {
+                "gene": gene,
+                "cell_types": ranked,
+                "top_cell_types": ranked[:8],
+                "top_cell_type": full_top,
+                "leave_one_donor_out_top_agreement": (
+                    round(sum(value == full_top for value in leave_one_out_tops) / len(donors), 3)
+                    if leave_one_out_tops
+                    else None
+                ),
+            }
+        )
     return {
         "genes": genes,
         "independence_unit": "donor",
         "ranking": "median donor detection fraction, then median donor mean log1p raw count",
+        "support_thresholds": {"minimum_donors": minimum_donors, "minimum_cells": minimum_cells},
     }
+
+
+def _top_cell_type(rows: list[dict[str, Any]]) -> str | None:
+    candidates = []
+    for cell_type in {str(row["cell_type"]) for row in rows}:
+        typed = [row for row in rows if row["cell_type"] == cell_type]
+        candidates.append(
+            (
+                statistics.median(float(row["fraction_detected"]) for row in typed),
+                statistics.median(float(row["mean_log1p_raw_count"]) for row in typed),
+                cell_type,
+            )
+        )
+    return max(candidates)[2] if candidates else None
 
 
 def _sensitivity_chart(analyses: list[dict[str, Any]]) -> dict[str, Any]:

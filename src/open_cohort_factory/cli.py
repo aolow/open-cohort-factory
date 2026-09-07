@@ -101,7 +101,11 @@ def build(
                 cellular_summaries.append(
                     {
                         "reference_panel": panel.name,
-                        **summarize_cell_type_expression(cellular_rows),
+                        **summarize_cell_type_expression(
+                            cellular_rows,
+                            project.expression.minimum_cell_type_donors,
+                            project.expression.minimum_cell_type_cells,
+                        ),
                     }
                 )
                 expression_provenance.query.setdefault("cell_type_attribution", []).append(
