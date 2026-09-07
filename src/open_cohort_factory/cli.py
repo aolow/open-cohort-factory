@@ -9,7 +9,11 @@ from rich.table import Table
 
 from .audit import methodological_warnings, summarize
 from .config import load_spec
-from .expression import summarize_expression, summarize_pan_tissue
+from .expression import (
+    summarize_cell_type_expression,
+    summarize_expression,
+    summarize_pan_tissue,
+)
 from .matching import exact_match
 from .models import BuildResult
 from .reference_fitness import assess_reference_fitness
@@ -44,6 +48,7 @@ def build(
     with console.status("Retrieving public GDC metadata..."):
         samples, disease_provenance = GDCClient().fetch(project.disease_cohort)
     provenance = [disease_provenance]
+    cellular_panels = []
     for panel in project.reference_panels:
         if panel.source.value == "gdc":
             with console.status(f"Retrieving public GDC metadata for {panel.name}..."):
@@ -56,6 +61,7 @@ def build(
         elif panel.source.value == "tabula_sapiens":
             with console.status(f"Retrieving Tabula Sapiens cell metadata for {panel.name}..."):
                 reference_samples, reference_provenance = TabulaSapiensClient().fetch(panel)
+            cellular_panels.append(panel)
         else:
             continue
         samples.extend(reference_samples)
@@ -65,9 +71,7 @@ def build(
     expression_summary: dict[str, object] | None = None
     if project.expression is not None:
         with console.status("Retrieving a cohort-restricted UCSC Xena expression slice..."):
-            expression_rows, expression_provenance = XenaClient().fetch(
-                samples, project.expression
-            )
+            expression_rows, expression_provenance = XenaClient().fetch(samples, project.expression)
         provenance.append(expression_provenance)
         expression_summary = summarize_expression(expression_rows, matching)
         expression_summary["coverage"] = {
@@ -86,6 +90,24 @@ def build(
                 atlas_rows, project.expression.normal_tissue_tpm_threshold
             )
             expression_provenance.query["gtex_pan_tissue"] = atlas_provenance
+        if project.expression.cell_type_attribution:
+            cellular_summaries = []
+            for panel in cellular_panels:
+                with console.status(f"Attributing expression to cell types in {panel.name}..."):
+                    cellular_rows, cellular_provenance = TabulaSapiensClient().fetch_expression(
+                        panel, project.expression.genes
+                    )
+                expression_rows.extend(cellular_rows)
+                cellular_summaries.append(
+                    {
+                        "reference_panel": panel.name,
+                        **summarize_cell_type_expression(cellular_rows),
+                    }
+                )
+                expression_provenance.query.setdefault("cell_type_attribution", []).append(
+                    cellular_provenance
+                )
+            expression_summary["cell_type_attribution"] = cellular_summaries
     warnings = methodological_warnings(project, samples)
     result = BuildResult(
         specification=project, samples=samples, provenance=provenance, warnings=warnings

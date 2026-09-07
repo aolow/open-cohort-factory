@@ -158,6 +158,16 @@ TEMPLATE = """<!doctype html>
     {% for tissue in gene.top_tissues %}<div class="tissue-row"><span>{{ tissue.tissue }}</span><div class="tissue-track"><span class="tissue-fill" style="width:{{ tissue.chart_percent }}%"></span></div><span>{{ tissue.median }}</span></div>{% endfor %}
   </section>{% endfor %}</div>
   {% endif %}
+  {% if summary.expression.cell_type_attribution is defined %}
+  <h2>Which normal cells carry the signal?</h2>
+  <p>Tabula Sapiens raw counts are summarized within donor × cell type. Detection is descriptive—not evidence that a transcript is surface-accessible or that targeting it causes toxicity.</p>
+  {% for panel in summary.expression.cell_type_attribution %}
+  <details><summary><strong>{{ panel.reference_panel }}</strong> · donor-aware attribution</summary>
+  {% for gene in panel.genes %}<h3>{{ gene.gene }}</h3><div class="table-wrap"><table><thead><tr><th>Cell type</th><th>Donors</th><th>Cells</th><th>Median donor detection</th><th>Median mean log1p count</th></tr></thead>
+  <tbody>{% for row in gene.top_cell_types %}<tr><td>{{ row.cell_type }}</td><td>{{ row.donors }}</td><td>{{ row.cells }}</td><td>{{ (row.median_fraction_detected * 100)|round(1) }}%</td><td>{{ row.median_mean_log1p_raw_count }}</td></tr>{% endfor %}</tbody></table></div>{% endfor %}
+  </details>
+  {% endfor %}
+  {% endif %}
   {% else %}<p>No expression retrieval was requested.</p>{% endif %}
   <h2>Single-cell reference context</h2>
   {% for panel in summary.cell_type_summaries %}
@@ -192,9 +202,7 @@ def write_outputs(
     expression_rows = expression_rows or []
     if expression_rows:
         with (output_dir / "expression.tsv").open("w", encoding="utf-8", newline="") as handle:
-            fieldnames = list(
-                dict.fromkeys(key for row in expression_rows for key in row)
-            )
+            fieldnames = list(dict.fromkeys(key for row in expression_rows for key in row))
             writer = csv.DictWriter(handle, fieldnames=fieldnames, delimiter="\t")
             writer.writeheader()
             writer.writerows(expression_rows)

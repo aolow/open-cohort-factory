@@ -84,9 +84,7 @@ class XenaClient:
         if not identifiers:
             raise ValueError("No cohort samples have public Xena identifiers.")
 
-        arguments = " ".join(
-            [json.dumps(spec.dataset), json.dumps(identifiers), json.dumps(genes)]
-        )
+        arguments = " ".join([json.dumps(spec.dataset), json.dumps(identifiers), json.dumps(genes)])
         query = f"({GENE_QUERY} {arguments})"
         response = self._client.post(
             f"{self.host}/data/", content=query, headers={"Content-Type": "text/plain"}
@@ -143,9 +141,7 @@ class XenaClient:
         )
         return rows, provenance
 
-    def fetch_gtex_atlas(
-        self, spec: ExpressionSpec
-    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    def fetch_gtex_atlas(self, spec: ExpressionSpec) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         """Fetch selected genes across every GTEx tissue represented in the Toil compendium."""
         samples = self._post(SAMPLES_QUERY, [PHENOTYPE_DATASET, None])
         _, encoded_columns = self._post(

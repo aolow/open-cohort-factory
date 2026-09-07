@@ -12,6 +12,7 @@ def test_example_spec_is_valid() -> None:
     assert spec.disease_cohort.projects == ["TCGA-LUAD"]
     assert spec.reference_panels[1].context == ReferenceContext.POSTMORTEM_REFERENCE
     assert spec.expression is not None and spec.expression.gtex_pan_tissue
+    assert spec.expression.cell_type_attribution
 
 
 def test_age_range_must_be_ordered() -> None:

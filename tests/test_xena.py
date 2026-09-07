@@ -21,9 +21,7 @@ def _sample(source: DataSource, role: str, sample_id: str, submitter_id: str | N
         case_id=f"donor-{sample_id}",
         sample_id=sample_id,
         sample_submitter_id=submitter_id,
-        reference_context=(
-            None if role == "disease" else ReferenceContext.POSTMORTEM_REFERENCE
-        ),
+        reference_context=(None if role == "disease" else ReferenceContext.POSTMORTEM_REFERENCE),
     )
 
 

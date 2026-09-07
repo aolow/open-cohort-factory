@@ -23,12 +23,14 @@ def test_reference_fitness_preserves_dimensions_instead_of_composite_score() -> 
     ]
     summary = {
         "populations": [{"role": "reference", "name": "GTEx lung", "donors": 1}],
-        "comparability": [{
-            "reference_panel": "GTEx lung",
-            "uncovered_disease_age_brackets": ["80-89"],
-            "female_proportion": {"absolute_difference": 0.2},
-            "decision": "insufficient_reference_donors",
-        }],
+        "comparability": [
+            {
+                "reference_panel": "GTEx lung",
+                "uncovered_disease_age_brackets": ["80-89"],
+                "female_proportion": {"absolute_difference": 0.2},
+                "decision": "insufficient_reference_donors",
+            }
+        ],
         "covariate_landscape": {"fields": coverage},
     }
     result = assess_reference_fitness([sample], summary, [], None)[0]

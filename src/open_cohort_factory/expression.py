@@ -20,40 +20,29 @@ def summarize_expression(
     analyses = [
         _comparison(
             f"all eligible: {reference_name}",
-            disease_rows
-            + [row for row in rows if row["cohort_name"] == reference_name],
+            disease_rows + [row for row in rows if row["cohort_name"] == reference_name],
         )
         for reference_name in reference_names
     ]
     for reference_name in reference_names:
         reference_rows = [row for row in rows if row["cohort_name"] == reference_name]
-        if not any(
-            row.get("reference_context") == "adjacent_non_tumor" for row in reference_rows
-        ):
+        if not any(row.get("reference_context") == "adjacent_non_tumor" for row in reference_rows):
             continue
         disease_donors = {row["donor_id"] for row in disease_rows}
         reference_donors = {row["donor_id"] for row in reference_rows}
         paired_donors = disease_donors & reference_donors
         paired_rows = [
-            row
-            for row in disease_rows + reference_rows
-            if row["donor_id"] in paired_donors
+            row for row in disease_rows + reference_rows if row["donor_id"] in paired_donors
         ]
         pairs = [(donor_id, donor_id) for donor_id in sorted(paired_donors)]
-        comparison = _comparison(
-            f"within donor: {reference_name}", paired_rows, donor_pairs=pairs
-        )
+        comparison = _comparison(f"within donor: {reference_name}", paired_rows, donor_pairs=pairs)
         comparison["within_donor_pairs"] = len(paired_donors)
         if comparison["genes"]:
             analyses.append(comparison)
     available = {(row["cohort_role"], row["donor_id"]) for row in rows}
     for result in matching:
-        reference_rows = [
-            row for row in rows if row["cohort_name"] == result["reference_panel"]
-        ]
-        if any(
-            row.get("reference_context") == "adjacent_non_tumor" for row in reference_rows
-        ):
+        reference_rows = [row for row in rows if row["cohort_name"] == result["reference_panel"]]
+        if any(row.get("reference_context") == "adjacent_non_tumor" for row in reference_rows):
             continue
         pair_members: defaultdict[str, set[tuple[str, str]]] = defaultdict(set)
         for row in result.get("selected_donors", []):
@@ -70,9 +59,11 @@ def summarize_expression(
             disease_id = next(donor for role, donor in members if role == "disease")
             reference_id = next(donor for role, donor in members if role == "reference")
             pairs.append((disease_id, reference_id))
-        matched_rows = [row for row in disease_rows + reference_rows if (
-            row["cohort_role"], row["donor_id"]
-        ) in selected]
+        matched_rows = [
+            row
+            for row in disease_rows + reference_rows
+            if (row["cohort_role"], row["donor_id"]) in selected
+        ]
         comparison = _comparison(
             f"matched: {result['reference_panel']}", matched_rows, donor_pairs=pairs
         )
@@ -86,9 +77,7 @@ def summarize_expression(
     }
 
 
-def summarize_pan_tissue(
-    rows: list[dict[str, Any]], tpm_threshold: float
-) -> dict[str, Any]:
+def summarize_pan_tissue(rows: list[dict[str, Any]], tpm_threshold: float) -> dict[str, Any]:
     """Create donor-aware normal-tissue safety summaries for each requested gene."""
     log_threshold = math.log2(tpm_threshold + 1)
     donor_values: defaultdict[tuple[str, str, str], list[float]] = defaultdict(list)
@@ -140,6 +129,42 @@ def summarize_pan_tissue(
     }
 
 
+def summarize_cell_type_expression(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Rank cell types using donor-level detection and expression summaries."""
+    genes = []
+    for gene in sorted({str(row["gene"]) for row in rows}):
+        gene_rows = [row for row in rows if row["gene"] == gene]
+        cell_types = []
+        for cell_type in sorted({str(row["cell_type"]) for row in gene_rows}):
+            typed = [row for row in gene_rows if row["cell_type"] == cell_type]
+            detection = [float(row["fraction_detected"]) for row in typed]
+            expression = [float(row["mean_log1p_raw_count"]) for row in typed]
+            cell_types.append(
+                {
+                    "cell_type": cell_type,
+                    "ontology_term_id": typed[0]["cell_type_ontology_term_id"],
+                    "donors": len({row["donor_id"] for row in typed}),
+                    "cells": sum(int(row["cells"]) for row in typed),
+                    "median_fraction_detected": round(statistics.median(detection), 3),
+                    "median_mean_log1p_raw_count": round(statistics.median(expression), 4),
+                }
+            )
+        ranked = sorted(
+            cell_types,
+            key=lambda item: (
+                item["median_fraction_detected"],
+                item["median_mean_log1p_raw_count"],
+            ),
+            reverse=True,
+        )
+        genes.append({"gene": gene, "cell_types": ranked, "top_cell_types": ranked[:8]})
+    return {
+        "genes": genes,
+        "independence_unit": "donor",
+        "ranking": "median donor detection fraction, then median donor mean log1p raw count",
+    }
+
+
 def _sensitivity_chart(analyses: list[dict[str, Any]]) -> dict[str, Any]:
     values = [
         max(abs(row["median_difference"]), abs(row["ci_lower"]), abs(row["ci_upper"]))
@@ -147,9 +172,7 @@ def _sensitivity_chart(analyses: list[dict[str, Any]]) -> dict[str, Any]:
         for row in analysis["genes"]
     ]
     limit = max(1, math.ceil(max(values, default=1)))
-    genes = sorted(
-        {row["gene"] for analysis in analyses for row in analysis["genes"]}
-    )
+    genes = sorted({row["gene"] for analysis in analyses for row in analysis["genes"]})
     return {
         "minimum": -limit,
         "maximum": limit,
@@ -189,9 +212,7 @@ def _comparison(
     for row in rows:
         key = (row["gene"], row["cohort_role"])
         sample_values[key].append(row["log2_tpm"])
-        donor_values[(row["gene"], row["cohort_role"], row["donor_id"])].append(
-            row["log2_tpm"]
-        )
+        donor_values[(row["gene"], row["cohort_role"], row["donor_id"])].append(row["log2_tpm"])
         donors[key].add(row["donor_id"])
 
     genes = sorted({gene for gene, _ in sample_values})

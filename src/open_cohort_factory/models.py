@@ -101,6 +101,7 @@ class ExpressionSpec(BaseModel):
     transform: Literal["log2_tpm_plus_1"] = "log2_tpm_plus_1"
     gtex_pan_tissue: bool = False
     normal_tissue_tpm_threshold: float = Field(default=1.0, ge=0)
+    cell_type_attribution: bool = False
 
 
 class ProjectSpec(BaseModel):

@@ -54,6 +54,10 @@ Optional pan-tissue mode profiles requested genes across every GTEx primary tiss
 the Xena Toil compendium. It reports donor-level medians, dispersion, and prevalence above a declared
 TPM threshold so tissue-specific enrichment is not mistaken for whole-body selectivity.
 
+Optional cell-type attribution then queries the same genes in declared Tabula Sapiens panels and
+summarizes raw counts within donor × cell type. This localizes a bulk-tissue signal without treating
+individual cells as independent biological replicates or equating RNA detection with target safety.
+
 ## Reference contexts
 
 The canonical model uses precise acquisition labels:

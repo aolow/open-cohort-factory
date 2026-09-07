@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import importlib
+import math
 import re
+from collections import defaultdict
 from datetime import UTC, datetime
 from typing import Any
 
@@ -120,6 +122,96 @@ class TabulaSapiensClient:
             citation_url=CENSUS_DOCS_URL,
         )
         return samples, provenance
+
+    def fetch_expression(
+        self, panel: ReferencePanelSpec, genes: list[str]
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        """Aggregate raw counts by donor and cell type for cellular attribution."""
+        try:
+            census_api = importlib.import_module("cellxgene_census")
+        except ImportError as error:
+            raise RuntimeError(
+                "Cell-type attribution requires: uv sync --extra dev --extra single-cell"
+            ) from error
+
+        requested_genes = list(
+            dict.fromkeys(gene.strip().upper() for gene in genes if gene.strip())
+        )
+        with census_api.open_soma(census_version=self.census_version) as census:
+            datasets = (
+                census["census_info"]["datasets"]
+                .read(column_names=["dataset_id", "collection_name", "dataset_title"])
+                .concat()
+                .to_pandas()
+            )
+            dataset = self._select_dataset(datasets, panel.tissue)
+            dataset_id = str(dataset["dataset_id"])
+            adata = census_api.get_anndata(
+                census,
+                "homo_sapiens",
+                X_name="raw",
+                # This is one selected source dataset, so duplicate-dataset filtering is not needed.
+                # Tabula Sapiens cells in this Census release are not marked as primary data.
+                obs_value_filter=f"dataset_id == '{dataset_id}'",
+                var_value_filter=f"feature_name in {requested_genes!r}",
+                obs_column_names=[
+                    "donor_id",
+                    "development_stage",
+                    "cell_type",
+                    "cell_type_ontology_term_id",
+                ],
+                var_column_names=["feature_name", "feature_id"],
+            )
+
+        rows = self._aggregate_expression(adata, panel)
+        return rows, {
+            "census_version": self.census_version,
+            "dataset_id": dataset_id,
+            "genes_requested": requested_genes,
+            "genes_returned": sorted({row["gene"] for row in rows}),
+            "aggregation": "donor_x_cell_type",
+            "measurements": ["fraction_detected", "mean_log1p_raw_count"],
+        }
+
+    @staticmethod
+    def _aggregate_expression(adata: Any, panel: ReferencePanelSpec) -> list[dict[str, Any]]:
+        groups: defaultdict[tuple[str, str, str], list[int]] = defaultdict(list)
+        for position, (_, cell) in enumerate(adata.obs.iterrows()):
+            age = parse_age(str(cell["development_stage"]))
+            if not _matches_age(age, panel):
+                continue
+            groups[
+                (
+                    str(cell["donor_id"]),
+                    str(cell["cell_type"]),
+                    str(cell["cell_type_ontology_term_id"]),
+                )
+            ].append(position)
+
+        rows: list[dict[str, Any]] = []
+        gene_names = [str(value).upper() for value in adata.var["feature_name"]]
+        for (donor, cell_type, ontology_id), positions in groups.items():
+            for gene_index, gene in enumerate(gene_names):
+                values = [float(adata.X[position, gene_index]) for position in positions]
+                rows.append(
+                    {
+                        "sample_id": f"{donor}:{ontology_id}",
+                        "donor_id": donor,
+                        "cohort_role": "reference",
+                        "cohort_name": panel.name,
+                        "source": DataSource.TABULA_SAPIENS.value,
+                        "project_id": "Tabula Sapiens",
+                        "gene": gene,
+                        "cell_type": cell_type,
+                        "cell_type_ontology_term_id": ontology_id,
+                        "cells": len(values),
+                        "fraction_detected": sum(value > 0 for value in values) / len(values),
+                        "mean_log1p_raw_count": sum(math.log1p(value) for value in values)
+                        / len(values),
+                        "reference_context": panel.context.value,
+                    }
+                )
+        return rows
 
     @staticmethod
     def _select_dataset(datasets: Any, tissue: str) -> Any:

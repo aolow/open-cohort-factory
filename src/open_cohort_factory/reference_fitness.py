@@ -14,9 +14,7 @@ def assess_reference_fitness(
     expression: dict[str, Any] | None,
 ) -> list[dict[str, Any]]:
     """Describe panel suitability by dimension and intended analytical use."""
-    comparison_by_name = {
-        row["reference_panel"]: row for row in summary.get("comparability", [])
-    }
+    comparison_by_name = {row["reference_panel"]: row for row in summary.get("comparability", [])}
     matching_by_name = {row["reference_panel"]: row for row in matching}
     population_by_name = {
         row["name"]: row for row in summary.get("populations", []) if row["role"] == "reference"
@@ -108,9 +106,7 @@ def _acquisition_dimension(context: str) -> dict[str, Any]:
     return {"dimension": "Acquisition alignment", "status": status, "evidence": evidence}
 
 
-def _matching_dimension(
-    match: dict[str, Any] | None, comparison: dict[str, Any]
-) -> dict[str, Any]:
+def _matching_dimension(match: dict[str, Any] | None, comparison: dict[str, Any]) -> dict[str, Any]:
     if not match:
         return {
             "dimension": "Design linkage",

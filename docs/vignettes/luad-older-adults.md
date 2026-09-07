@@ -229,6 +229,21 @@ This screen is an expression-context flag, not a toxicity prediction. Bulk RNA d
 protein abundance, accessibility, essentiality, or the cell type carrying the signal; those questions
 motivate the next cell-type-attribution phase.
 
+With `cell_type_attribution: true`, the build retrieves the same genes from the declared Tabula
+Sapiens lung panel. It reports detection and raw-count summaries at donor × cell-type resolution,
+then ranks cell types using donor medians. This distinguishes a signal distributed through epithelial
+populations from one concentrated in a rarer immune or stromal compartment.
+
+The attribution is nested in a collapsed report section. It answers “which annotated cells may
+contribute to this tissue signal?”—not whether a protein is on the cell surface, accessible to a
+therapeutic modality, or causally responsible for toxicity. Cell labels, dissociation, sampling,
+dropout, and limited donor counts remain important limitations.
+
+In the verified lung run, EPCAM was most consistently detected in alveolar type 2, multiciliated,
+club, and goblet epithelial cells. CEACAM5 was led by goblet and club cells. MSLN was led by
+mesothelial cells, but that estimate came from only 11 cells across two donors; the report retains
+both counts so an apparently strong signal cannot hide its limited support.
+
 ## Add cellular context without inflating the evidence
 
 The same build queries the tissue-specific Tabula Sapiens lung dataset through CELLxGENE Census.

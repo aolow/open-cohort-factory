@@ -70,3 +70,4 @@ expression:
   transform: log2_tpm_plus_1
   gtex_pan_tissue: true
   normal_tissue_tpm_threshold: 1.0
+  cell_type_attribution: true

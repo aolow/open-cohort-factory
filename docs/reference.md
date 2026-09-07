@@ -93,9 +93,16 @@ expression:
   genes: [EPCAM, CEACAM5, MSLN]
   gtex_pan_tissue: true
   normal_tissue_tpm_threshold: 1.0
+  cell_type_attribution: true
 ```
 
 The connector decodes Xena phenotype fields, selects GTEx `Normal Tissue` samples, aggregates
 multiple samples to donor × primary-tissue medians, and ranks tissues separately for each gene.
 The threshold is evaluated in TPM after conversion to `log2(TPM + 1)`. Atlas sample and tissue
 coverage are recorded in the Xena provenance query.
+
+When `cell_type_attribution` is enabled, each declared Tabula Sapiens panel is queried for the same
+genes. Raw counts are first summarized within donor × cell type; cell types are then ranked by median
+donor detection fraction and median donor mean log1p count. This preserves the donor as the
+independence unit. These quantities are not TPM and must not be numerically compared with Xena bulk
+expression.
